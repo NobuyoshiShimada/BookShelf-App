@@ -29,10 +29,10 @@ class Review extends Model
     }
 
     // このレビューに「いいね」したユーザー一覧(多対多)
-    // 中間テーブル: like_reviews()
+    // 中間テーブル: review_likes()
     // $review->likedByUsers()でアクセス可能
     public function likedByUsers()
     {
-        return $this->belongsToMany(User::class, 'like_reviews')->withTimestamps();
+        return $this->belongsToMany(User::class, 'review_likes')->withTimestamps();
     }
 }
