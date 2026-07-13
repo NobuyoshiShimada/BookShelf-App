@@ -8,4 +8,31 @@ use Illuminate\Database\Eloquent\Model;
 class Review extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'book_id',
+        'rating',
+        'comment',
+    ];
+
+    // このレビューを投稿したユーザー(多対1)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // レビューされた本(多対1)
+    public function book()
+    {
+        return $this->belongsTo(Book::class);
+    }
+
+    // このレビューに「いいね」したユーザー一覧(多対多)
+    // 中間テーブル: like_reviews()
+    // $review->likedByUsers()でアクセス可能
+    public function likedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'like_reviews')->withTimestamps();
+    }
 }
