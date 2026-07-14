@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Review;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ReviewLikeSeeder extends Seeder
@@ -19,8 +18,8 @@ class ReviewLikeSeeder extends Seeder
 
         foreach ($reviews as $review) {
             $otherUserIds = $users->where('id', '!=', $review->user_id)
-            ->pluck('id')
-            ->toArray();
+                ->pluck('id')
+                ->toArray();
 
             shuffle($otherUserIds);
             $likeCount = rand(0, 3);

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Review;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ReviewSeeder extends Seeder
@@ -73,7 +72,7 @@ class ReviewSeeder extends Seeder
             Review::create([
                 'user_id' => $data['user_id'],
                 'book_id' => $data['book_id'],
-                'rating'  => $data['rating'],
+                'rating' => $data['rating'],
                 'comment' => $data['comment'],
             ]);
         }

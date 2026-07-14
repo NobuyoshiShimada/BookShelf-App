@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class FavoriteSeeder extends Seeder
@@ -17,7 +16,7 @@ class FavoriteSeeder extends Seeder
 
         $favoritesMap = [
             1 => [1, 2, 3, 4],
-            2 => [2, 5, 8,],
+            2 => [2, 5, 8],
             3 => [3, 4, 7, 10],
             4 => [1, 6, 8, 10, 11],
             5 => [3, 7, 11],
