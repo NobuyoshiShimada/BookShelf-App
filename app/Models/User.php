@@ -64,10 +64,10 @@ class User extends Authenticatable
     }
 
     // 自分が「いいね」したレビューの一覧(多対多)
-    // 中間テーブル: like_reviews
+    // 中間テーブル: review_likes
     // $user->likedReviews()でアクセス可能
     public function likedReviews()
     {
-        return $this->belongsToMany(Review::class, 'like_reviews')->withTimestamps();
+        return $this->belongsToMany(Review::class, 'review_likes')->withTimestamps();
     }
 }
