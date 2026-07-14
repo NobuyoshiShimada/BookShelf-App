@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Book;
+use App\Models\Genre;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -21,7 +23,7 @@ class BookSeeder extends Seeder
 
         $bookData = [
             [
-                 'number' => 1,
+                'number' => 1,
                 'title' => '吾輩は猫である',
                 'author' => '夏目漱石',
                 'isbn' => '9784101010014',
@@ -128,13 +130,13 @@ class BookSeeder extends Seeder
                     'user_id' => $user->id,
                     'title' => $data['title'],
                     'author' => $data['author'],
-                    'published_data' => $data['published_data'],
+                    'published_date' => $data['published_date'],
                     'description' => $data['description'],
                     'image_url' => "https://placehold.co/200x300/e2e8f0/475569?text={$data['number']}",
                 ]
             );
 
-            $genreIds = Genre::whereIn('name', $date['genres'])->pluck('id')->toArray();
+            $genreIds = Genre::whereIn('name', $data['genres'])->pluck('id')->toArray();
 
             $book->genres()->sync($genreIds);
         }
