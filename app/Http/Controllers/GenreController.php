@@ -3,21 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
-use App\Models\Review;
-use App\Models\User;
 use App\Models\Genre;
 use Illuminate\Http\Request;
 
-class BookController extends Controller
+class GenreController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $books = Book::with('genres')->latest()->paginate(10);
-
-        return view('books.index', compact('books'));
+  
     }
 
     /**
@@ -25,9 +21,7 @@ class BookController extends Controller
      */
     public function create()
     {
-        $genres = Genre::all();
-
-        return view('books.create', compact('genres'));
+        //
     }
 
     /**
@@ -41,11 +35,9 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Book $book)
+    public function show(string $id)
     {
-        $book->load(['genres', 'favoritedByUsers', 'reviews.likedByUsers']);
-
-        return view('books.show', compact('book'));
+        //
     }
 
     /**
