@@ -154,6 +154,6 @@ return [
             'confirm' => true,
             'confirmPassword' => true,
             'window' => 0,
-            ]),
+        ]),
     ],
 ];

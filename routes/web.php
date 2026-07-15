@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,7 +13,12 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+// 公開ページ
+Route::get('/books', [BookController::class, 'index'])->name('books.index');
+Route::get('/ranking', [BookController::class, 'index'])->name('ranking.index');
+Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
 
-Route::get('/', function () {
-    return view('welcome');
+// 認証済み
+Route::middleware(['auth'])->group(function () {
+    Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
 });
