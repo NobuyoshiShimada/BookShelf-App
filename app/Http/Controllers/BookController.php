@@ -6,7 +6,10 @@ use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
 use App\Models\Genre;
+use App\Policies\BookPolicy;
+use App\Http\Requests\BookRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BookController extends Controller
 {
@@ -33,9 +36,23 @@ class BookController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(BookRequest $request)
     {
-        //
+        $validated = $request->validated();
+
+        $book = Book::create([
+            'user_id' => Auth::id(),
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'isbn' => $validated['isbn'],
+            'published_date' => $validated['published_date'],
+            'description' => $validated['description'],
+            'image_url' => $validated['image_url'],
+        ]);
+
+        $book->genres()->sync($request->genres);
+
+        return redirect()->route('books.index')->with('success', '書籍「' . $book->title . '」を新しく登録しました。');
     }
 
     /**
@@ -51,24 +68,37 @@ class BookController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Book $book)
     {
-        //
+        $this->authorize('update', $book);
+
+        $genres = Genre::all();
+        $book->load('genres');
+
+        return view('books.edit', compact('book', 'genres'));
+
+
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(BookRequest $request, Book $book)
     {
-        //
+        $this->authorize('update', $book);
+
+        return view('books.show', compact('book'));
     }
+
+
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function delete(Book $book)
     {
-        //
+        $this->authorize('delete', $book);
+
+        return view('books.index', compact('book'));
     }
 }

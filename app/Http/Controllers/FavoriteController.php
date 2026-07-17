@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Book;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class FavoriteController extends Controller
@@ -11,7 +13,9 @@ class FavoriteController extends Controller
      */
     public function index()
     {
-        //
+        $favorites = user::with('books')->latest()->paginate(10);
+
+        return view('favorites.index', compact('favorites'));
     }
 
     /**

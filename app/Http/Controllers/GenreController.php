@@ -13,7 +13,9 @@ class GenreController extends Controller
      */
     public function index()
     {
-  
+        $genres = Genre::withCount('books')->oldest('name')->get();
+
+        return view('genres.index', compact('genres'));
     }
 
     /**
@@ -21,7 +23,7 @@ class GenreController extends Controller
      */
     public function create()
     {
-        //
+        return view('genres.create');
     }
 
     /**
@@ -29,7 +31,11 @@ class GenreController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        Genre::create([
+            'name' => $request->name,
+        ]);
+
+        return redirect()->route('genres.index');
     }
 
     /**
