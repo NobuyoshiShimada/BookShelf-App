@@ -87,7 +87,21 @@ class BookController extends Controller
     {
         $this->authorize('update', $book);
 
-        return view('books.show', compact('book'));
+        $validated = $request->validated();
+
+        $book->update([
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'isbn' => $validated['isbn'],
+            'published_date' => $validated['published_date'],
+            'description' => $validated['description'],
+            'image_url' => $validated['image_url'],
+        ]);
+
+        $book->genres()->sync($request->genres);
+
+        return redirect()->route('books.show', $book)
+        ->with('success', '書籍「' . $book->title . '」の情報を更新しました。');
     }
 
 
@@ -95,10 +109,17 @@ class BookController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function delete(Book $book)
+    public function destroy(Book $book)
     {
         $this->authorize('delete', $book);
 
-        return view('books.index', compact('book'));
+        $book->genres()->sync([]);
+
+        $book->reviews()->delete();
+
+        $book->delete();
+
+        return redirect()->route('books.index')
+        ->with('success', '書籍「' . $book->title . '」をデータベースから完全に削除しました。');
     }
 }

@@ -34,7 +34,7 @@ Route::middleware(['auth'])->group(function () {
     // 書籍更新
     Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
     // 書籍削除
-    Route::delete('/books', [BookController::class, 'destroy'])->name('books.destroy');
+    Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
     // 書籍のお気に入り一覧
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
     // お気に入りボタンを押す
@@ -65,7 +65,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/genres/{genre}', [GenreController::class, 'update'])->name('genres.update');
     // ジャンル削除
     Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('genres.destroy');
-
 
 
     });
