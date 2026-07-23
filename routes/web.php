@@ -53,10 +53,10 @@ Route::middleware(['auth'])->group(function () {
 
     // ジャンル一覧
     Route::get('/genres', [GenreController::class, 'index'])->name('genres.index');
-    // ジャンル詳細
-    Route::get('/genres/{genre}', [GenreController::class, 'show'])->name('genres.show');
     // 新ジャンル登録
     Route::get('/genres/create', [GenreController::class, 'create'])->name('genres.create');
+    // ジャンル詳細
+    Route::get('/genres/{genre}', [GenreController::class, 'show'])->name('genres.show');
     // 新ジャンル登録処理
     Route::post('/genres', [GenreController::class, 'store'])->name('genres.store');
     // ジャンル編集

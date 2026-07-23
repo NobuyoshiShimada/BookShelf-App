@@ -76,6 +76,7 @@ class ReviewController extends Controller
     {
         $review = Review::findOrFail($id);
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         $user->likedReviews()->toggle($review->id);
