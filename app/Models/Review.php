@@ -35,4 +35,11 @@ class Review extends Model
     {
         return $this->belongsToMany(User::class, 'review_likes')->withTimestamps();
     }
+
+    public function isLikedBy(?User $user): bool
+    {
+        if (!$user) return false;
+
+        return $this->likedByUsers()->where('user_id', $user->id)->exists();
+    }
 }
