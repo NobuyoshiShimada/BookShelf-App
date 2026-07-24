@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReviewRequest;
 use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
-use App\Http\Requests\ReviewRequest;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
-
     /**
      * Store a newly created resource in storage.
      */
@@ -26,7 +24,7 @@ class ReviewController extends Controller
         ]);
 
         return redirect()->route('books.show', $book)
-        ->with('success', 'レビューを投稿しました。');
+            ->with('success', 'レビューを投稿しました。');
     }
 
     /**
@@ -54,7 +52,7 @@ class ReviewController extends Controller
         ]);
 
         return redirect()->route('books.show', $review->book)
-        ->with('success', 'レビューを更新しました。');
+            ->with('success', 'レビューを更新しました。');
     }
 
     /**
@@ -69,14 +67,14 @@ class ReviewController extends Controller
         $review->delete();
 
         return redirect()->route('books.show', $book)
-        ->with('success', 'レビューを削除しました。');
+            ->with('success', 'レビューを削除しました。');
     }
 
     public function toggle($id)
     {
         $review = Review::findOrFail($id);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
 
         $user->likedReviews()->toggle($review->id);

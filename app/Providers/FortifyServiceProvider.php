@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
-use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Contracts\LogoutResponse;
+use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -46,20 +46,20 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
-        Fortify::loginView(function() {
+        Fortify::loginView(function () {
             return view('auth.login');
-            });
+        });
 
-        Fortify::registerView(function() {
+        Fortify::registerView(function () {
             return view('auth.register');
-            });
+        });
 
-        $this->app->instance(LogoutResponse::class, new class implements
-        LogoutResponse {
+        $this->app->instance(LogoutResponse::class, new class implements LogoutResponse
+        {
             public function toResponse($requests)
-                {
-                    return redirect('/books');
-                }
-            });
+            {
+                return redirect('/books');
+            }
+        });
     }
 }

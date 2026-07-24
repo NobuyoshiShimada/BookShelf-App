@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Override;
@@ -19,7 +20,7 @@ class BookRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -29,7 +30,7 @@ class BookRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|size:13|regex:/^[0-9]+$/|unique:books,isbn,' . $bookId,
+            'isbn' => 'required|string|size:13|regex:/^[0-9]+$/|unique:books,isbn,'.$bookId,
             'published_date' => 'required|date|before_or_equal:today',
             'description' => 'nullable',
             'image_url' => 'nullable|string|url|max:255',

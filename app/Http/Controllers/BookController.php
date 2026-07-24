@@ -2,13 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use App\Models\Review;
-use App\Models\User;
-use App\Models\Genre;
-use App\Policies\BookPolicy;
 use App\Http\Requests\BookRequest;
-use Illuminate\Http\Request;
+use App\Models\Book;
+use App\Models\Genre;
 use Illuminate\Support\Facades\Auth;
 
 class BookController extends Controller
@@ -52,7 +48,7 @@ class BookController extends Controller
 
         $book->genres()->sync($request->genres);
 
-        return redirect()->route('books.index')->with('success', '書籍「' . $book->title . '」を新しく登録しました。');
+        return redirect()->route('books.index')->with('success', '書籍「'.$book->title.'」を新しく登録しました。');
     }
 
     /**
@@ -60,7 +56,7 @@ class BookController extends Controller
      */
     public function show(Book $book)
     {
-        $book->load(['genres', 'favoritedByUsers', 'reviews.likedByUsers']);
+        $book->load(['genres', 'favoriteBooks', 'reviews.likedByUsers']);
 
         return view('books.show', compact('book'));
     }
@@ -76,7 +72,6 @@ class BookController extends Controller
         $book->load('genres');
 
         return view('books.edit', compact('book', 'genres'));
-
 
     }
 
@@ -101,10 +96,8 @@ class BookController extends Controller
         $book->genres()->sync($request->genres);
 
         return redirect()->route('books.show', $book)
-        ->with('success', '書籍「' . $book->title . '」の情報を更新しました。');
+            ->with('success', '書籍「'.$book->title.'」の情報を更新しました。');
     }
-
-
 
     /**
      * Remove the specified resource from storage.
@@ -120,6 +113,20 @@ class BookController extends Controller
         $book->delete();
 
         return redirect()->route('books.index')
-        ->with('success', '書籍「' . $book->title . '」をデータベースから完全に削除しました。');
+            ->with('success', '書籍「'.$book->title.'」をデータベースから完全に削除しました。');
+    }
+
+    public function ranking()
+    {
+        $rankedBooks = Book::with(['genres', 'favoriteBooks'])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->having('reviews_count', '>', 0)
+            ->orderByDesc('reviews_avg_rating')
+            ->orderByDesc('reviews_count')
+            ->take(10)
+            ->get();
+
+        return view('ranking.index', compact('rankedBooks'));
     }
 }

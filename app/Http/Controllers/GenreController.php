@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use App\Models\Genre;
 use App\Http\Requests\GenreRequest;
-use Illuminate\Http\Request;
+use App\Models\Genre;
 
 class GenreController extends Controller
 {
@@ -39,7 +37,7 @@ class GenreController extends Controller
         ]);
 
         return redirect()->route('genres.index')
-        ->with('success', 'ジャンル「' . $genre->name . '」を新しく登録しました。');
+            ->with('success', 'ジャンル「'.$genre->name.'」を新しく登録しました。');
     }
 
     /**
@@ -72,8 +70,7 @@ class GenreController extends Controller
         ]);
 
         return redirect()->route('genres.index', $genre)
-        ->with('success', 'ジャンル「' . $genre->name . '」の情報を更新しました。');
-
+            ->with('success', 'ジャンル「'.$genre->name.'」の情報を更新しました。');
 
     }
 
@@ -87,7 +84,6 @@ class GenreController extends Controller
         $genre->delete();
 
         return redirect()->route('genres.index')
-        ->with('success', 'ジャンル「' . $genre->name . '」を削除しました。');
+            ->with('success', 'ジャンル「'.$genre->name.'」を削除しました。');
     }
-
 }

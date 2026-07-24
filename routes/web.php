@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\BookController;
-use App\Http\Controllers\GenreController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\GenreController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,8 +20,7 @@ use Illuminate\Support\Facades\Route;
 // 書籍一覧
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
 // 書籍のランキング
-Route::get('/ranking', [BookController::class, 'index'])->name('ranking.index');
-
+Route::get('/ranking', [BookController::class, 'ranking'])->name('ranking.index');
 
 // 認証済み
 Route::middleware(['auth'])->group(function () {
@@ -66,10 +65,8 @@ Route::middleware(['auth'])->group(function () {
     // ジャンル削除
     Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('genres.destroy');
 
+});
 
-    });
-
-    // 公開ページ
-    // 書籍詳細
+// 公開ページ
+// 書籍詳細
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
-
