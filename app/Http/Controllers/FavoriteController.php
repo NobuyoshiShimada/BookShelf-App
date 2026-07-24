@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FavoriteController extends Controller
 {
@@ -13,56 +14,23 @@ class FavoriteController extends Controller
      */
     public function index()
     {
-        $favorites = user::with('books')->latest()->paginate(10);
+        $user = Auth::user();
 
-        return view('favorites.index', compact('favorites'));
+        $books = $user->favoriteBooks()
+        ->with(['genres'])
+        ->latest('favorites.created_at')
+        ->paginate(10);
+
+        return view('favorites.index', compact('books'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function toggle(Book $book)
     {
-        //
-    }
+        $user = Auth::user();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        $user->favoriteBooks()->toggle($book->id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return back()->with('success', 'お気に入りを追加しました。');
     }
 }
