@@ -41,7 +41,7 @@ class Book extends Model
 
     // この本をお気に入り登録しているユーザー一覧(多対多)
     // 中間テーブル: favorites
-    // $book->favoritedByUsers()でアクセス可能
+    // $book->favoriteBooks()でアクセス可能
     public function favoriteBooks()
     {
         return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
