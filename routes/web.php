@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 */
 // 公開ページ
 // 書籍一覧
+{
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
 // 書籍のランキング
 Route::get('/ranking', [BookController::class, 'ranking'])->name('ranking.index');
@@ -70,3 +71,4 @@ Route::middleware(['auth'])->group(function () {
 // 公開ページ
 // 書籍詳細
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
+}

@@ -7,9 +7,11 @@ use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ReviewController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Store a newly created resource in storage.
      */
