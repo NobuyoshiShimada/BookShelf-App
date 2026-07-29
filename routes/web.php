@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-{
+
 // 公開ページ
 // 書籍一覧
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
@@ -71,4 +71,3 @@ Route::middleware(['auth'])->group(function () {
 // 公開ページ
 // 書籍詳細
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
-}

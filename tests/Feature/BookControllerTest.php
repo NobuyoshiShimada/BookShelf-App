@@ -7,9 +7,6 @@ use App\Models\Genre;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Override;
-use Symfony\Component\Routing\Loader\ProtectedPhpFileLoader;
 use Tests\TestCase;
 
 class BookControllerTest extends TestCase
@@ -17,14 +14,26 @@ class BookControllerTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
-    /**
-     * A basic feature test example.
-     */
-    #[Override]
-    Protected function setUp(): void
+
+    // 認証用ユーザー
+    protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
+    }
+
+    // 未ログインユーザーのアクセス制限テスト
+    public function test_guest_access(): void
+    {
+        // テスト用の書籍を1冊作成
+        $book = Book::factory()->create();
+
+        // 認証が必要なページはすべてリダイレクト（302）されることをテスト
+        $this->get(route('books.create'))->assertStatus(302);
+        $this->post(route('books.store'))->assertStatus(302);
+        $this->get(route('books.edit', $book))->assertStatus(302);
+        $this->put(route('books.update', $book))->assertStatus(302);
+        $this->delete(route('books.destroy', $book))->assertStatus(302);
     }
 
     // indexのテスト
@@ -40,7 +49,7 @@ class BookControllerTest extends TestCase
         // 書籍一覧の情報を取得
         $response = $this->get(route('books.index'));
 
-        // ステータス、ルート、取得情報をテスト
+        // ステータス、画面、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('books.index');
         $response->assertViewHas('books');
@@ -54,9 +63,9 @@ class BookControllerTest extends TestCase
 
         // ログインして書籍新規作成画面の情報を取得
         $response = $this->actingAs($this->user)
-        ->get(route('books.create'));
+            ->get(route('books.create'));
 
-        // ステータス、ルート、取得情報をテスト
+        // ステータス、画面、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('books.create');
         $response->assertViewHas('genres');
@@ -78,9 +87,9 @@ class BookControllerTest extends TestCase
             'image_url' => 'https://example.com',
             'genres' => $genres->pluck('id')->toArray(),
         ];
-        // ログインして新規登録
+        // ログインして新規登録処理
         $response = $this->actingAs($this->user)
-        ->post(route('books.store'), $bookDate);
+            ->post(route('books.store'), $bookDate);
 
         // データベース登録確認
         $this->assertDatabaseHas('books', [
@@ -94,7 +103,7 @@ class BookControllerTest extends TestCase
 
         // 登録後のリダイレクト先、登録成功時のメッセージのテスト
         $response->assertRedirect(route('books.index'));
-        $response->assertSessionHas('success', '書籍「' . $book->title . '」を新しく登録しました。');
+        $response->assertSessionHas('success', '書籍「'.$book->title.'」を新しく登録しました。');
     }
 
     // Showのテスト
@@ -106,7 +115,7 @@ class BookControllerTest extends TestCase
         // 書籍詳細を取得
         $response = $this->get(route('books.show', $book));
 
-        // ステータス、ルート、取得情報をテスト
+        // ステータス、画面、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('books.show');
         $response->assertViewHas('book');
@@ -122,16 +131,16 @@ class BookControllerTest extends TestCase
 
         // ログインして編集画面情報を取得
         $response = $this->actingAs($this->user)
-        ->get(route('books.edit', $book));
+            ->get(route('books.edit', $book));
 
-        // ステータス、ルート、取得情報をテスト
+        // ステータス、画面、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('books.edit');
         $response->assertViewHas('book');
         $response->assertViewHas('genres');
     }
 
-    // Editのテスト（他人によるアクセス）
+    // Editのテスト（作成者が他人）
     public function test_not_owner(): void
     {
         // テスト用の他人ユーザー1人作成
@@ -141,7 +150,7 @@ class BookControllerTest extends TestCase
 
         // ログインして編集画面情報を取得するがエラーになる
         $response = $this->actingAs($this->user)
-        ->get(route('books.edit', $book));
+            ->get(route('books.edit', $book));
 
         $response->assertStatus(403);
     }
@@ -167,7 +176,7 @@ class BookControllerTest extends TestCase
 
         // ログインして更新処理
         $response = $this->actingAs($this->user)
-        ->put(route('books.update', $book), $updatedData);
+            ->put(route('books.update', $book), $updatedData);
 
         // データベース登録確認
         $this->assertDatabaseHas('books', [
@@ -178,7 +187,7 @@ class BookControllerTest extends TestCase
         // 更新後のリダイレクト先、更新成功時のメッセージのテスト
         $book->refresh();
         $response->assertRedirect(route('books.show', $book));
-        $response->assertSessionHas('success', '書籍「' . $book->title . '」の情報を更新しました。');
+        $response->assertSessionHas('success', '書籍「'.$book->title.'」の情報を更新しました。');
     }
 
     // Destroyのテスト
@@ -193,7 +202,7 @@ class BookControllerTest extends TestCase
 
         // ログインして削除する
         $response = $this->actingAs($this->user)
-        ->delete(route('books.destroy', $book));
+            ->delete(route('books.destroy', $book));
 
         // データベースから削除されているか確認
         $this->assertDatabaseMissing('books', ['id' => $book->id]);
@@ -202,11 +211,11 @@ class BookControllerTest extends TestCase
 
         // 削除後のリダイレクト先、削除成功時のメッセージのテスト
         $response->assertRedirect(route('books.index'));
-        $response->assertSessionHas('success', '書籍「' . $book->title . '」をデータベースから完全に削除しました。');
+        $response->assertSessionHas('success', '書籍「'.$book->title.'」をデータベースから完全に削除しました。');
     }
 
     // Rankingのテスト
-    public function test_Ranking(): void
+    public function test_ranking(): void
     {
         // テスト用の書籍を1冊作成
         $book = Book::factory()->create();
@@ -219,7 +228,7 @@ class BookControllerTest extends TestCase
         // ランキングの画面を取得
         $response = $this->get(route('ranking.index'));
 
-        // ステータス、ルート、取得情報をテスト
+        // ステータス、画面、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('ranking.index');
         $response->assertViewHas('rankedBooks');

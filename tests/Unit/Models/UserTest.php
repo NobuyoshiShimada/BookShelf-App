@@ -5,12 +5,14 @@ namespace Tests\Unit\Models;
 use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class UserTest extends TestCase
 {
     use RefreshDatabase;
+
     /**
      * A basic unit test example.
      */
@@ -23,7 +25,7 @@ class UserTest extends TestCase
         Book::factory()->count(2)->create(['user_id' => $user->id]);
 
         // $user->bookがEloquentのコレクションで、件数が2件をテスト
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $user->books);
+        $this->assertInstanceOf(Collection::class, $user->books);
         $this->assertCount(2, $user->books);
     }
 
@@ -37,7 +39,7 @@ class UserTest extends TestCase
         Review::factory()->count(3)->create(['user_id' => $user->id]);
 
         // $user->reviewがEloquentのコレクションで、件数が3件をテスト
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $user->reviews);
+        $this->assertInstanceOf(Collection::class, $user->reviews);
         $this->assertCount(3, $user->reviews);
     }
 

@@ -5,12 +5,14 @@ namespace Tests\Unit\Models;
 use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ReviewTest extends TestCase
 {
     use RefreshDatabase;
+
     /**
      * A basic unit test example.
      */
@@ -46,7 +48,7 @@ class ReviewTest extends TestCase
         $review->likedByUsers()->attach($users->pluck('id'));
 
         // このレビューに「いいね」したユーザーが2人正しく取得できるかテスト
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $review->likedByUsers);
+        $this->assertInstanceOf(Collection::class, $review->likedByUsers);
         $this->assertCount(2, $review->likedByUsers);
         $this->assertInstanceOf(User::class, $review->likedByUsers->first());
     }
