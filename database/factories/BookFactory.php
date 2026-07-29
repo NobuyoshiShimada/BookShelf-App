@@ -19,7 +19,7 @@ class BookFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'title' => fake()->realText(20) . 'の本',
+            'title' => fake()->realText(20).'の本',
             'author' => fake()->name(),
             'isbn' => fake()->isbn13(),
             'published_date' => fake()->date('Y-m-d'),

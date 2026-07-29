@@ -34,9 +34,10 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $e)
     {
         if ($request->is('api/*') && $e instanceof ModelNotFoundException) {
-        return response()->json([
-        'error' => '書籍がみつかりません。'],404);
+            return response()->json([
+                'error' => '書籍がみつかりません。'], 404);
         }
+
         return parent::render($request, $e);
     }
 }

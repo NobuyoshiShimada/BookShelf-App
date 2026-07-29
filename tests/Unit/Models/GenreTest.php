@@ -4,12 +4,14 @@ namespace Tests\Unit\Models;
 
 use App\Models\Book;
 use App\Models\Genre;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class GenreTest extends TestCase
 {
     use RefreshDatabase;
+
     /**
      * A basic unit test example.
      */
@@ -25,7 +27,7 @@ class GenreTest extends TestCase
         $genre->books()->attach($books->pluck('id'));
 
         // 紐付けた2冊の書籍が正しくコレクションとして引き抜けるかテスト
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $genre->books);
+        $this->assertInstanceOf(Collection::class, $genre->books);
         $this->assertCount(2, $genre->books);
         $this->assertInstanceOf(Book::class, $genre->books->first());
     }

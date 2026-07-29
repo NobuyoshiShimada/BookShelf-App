@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Override;
 
@@ -18,12 +19,13 @@ class UpdateBookRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         $book = $this->route('book');
         $bookId = is_object($book) ? $book->id : null;
+
         return [
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
@@ -65,5 +67,4 @@ class UpdateBookRequest extends FormRequest
             'genres.*' => '選択されたジャンルの中に、システムに存在しない不正なジャンルが含まれています。',
         ];
     }
-
 }

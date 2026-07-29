@@ -27,7 +27,7 @@ class BookResource extends JsonResource
             'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'review_count' => $this->reviews_count ?? 0,
             'review_avg_rating' => $this->reviews_avg_rating !== null
-             ? round((float) $this->reviews_avg_rating,1) : null,
+             ? round((float) $this->reviews_avg_rating, 1) : null,
         ];
     }
 }

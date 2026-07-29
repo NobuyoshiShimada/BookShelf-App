@@ -3,27 +3,27 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\StoreBookRequest;
+use App\Http\Requests\Api\V1\UpdateBookRequest;
 use App\Http\Resources\Api\V1\BookResource;
 use App\Models\Book;
 use Illuminate\Http\Request;
-use App\Http\Requests\Api\V1\StoreBookRequest;
-use App\Http\Requests\Api\V1\UpdateBookRequest;
 
 class BookController extends Controller
 {
     public function index(Request $request)
     {
         $query = Book::with('genres')
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating');
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating');
 
         if ($request->filled('keyword')) {
-            $keyword = '%' . $request->input('keyword') . '%';
-            $query->where(function($q) use ($keyword) {
+            $keyword = '%'.$request->input('keyword').'%';
+            $query->where(function ($q) use ($keyword) {
                 $q->where('title', 'like', $keyword)
-                ->orWhere('author','like', $keyword)
-                ->orWhere('description', 'like', $keyword)
-                ->orWhere('isbn', 'like', $keyword);
+                    ->orWhere('author', 'like', $keyword)
+                    ->orWhere('description', 'like', $keyword)
+                    ->orWhere('isbn', 'like', $keyword);
             });
         }
 
@@ -65,8 +65,8 @@ class BookController extends Controller
         }
 
         return (new BookResource($book->load('genres')))
-        ->response()
-        ->setStatusCode(201);
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -75,7 +75,7 @@ class BookController extends Controller
     // 書籍詳細
     public function show(Book $book)
     {
-        $book->load(['genres', 'user', 'reviews' => function($query) {
+        $book->load(['genres', 'user', 'reviews' => function ($query) {
             $query->with('user')->withCount('likedByUsers');
         }]);
 
@@ -120,7 +120,7 @@ class BookController extends Controller
         $book->delete();
 
         return response()->json([
-            'message' => '書籍情報を削除しました。'
+            'message' => '書籍情報を削除しました。',
         ], 200);
     }
 }
