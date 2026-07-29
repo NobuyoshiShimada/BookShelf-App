@@ -29,10 +29,10 @@ class GenreControllerTest extends TestCase
 
         $this->assertGuest();
 
-        $this->get(route('genres.index'))->assertStatus(302);
-        $this->get(route('genres.create'))->assertStatus(302);
-        $this->get(route('genres.show', $genre))->assertStatus(302);
-        $this->get(route('genres.edit', $genre))->assertStatus(302);
+        $this->get(route('genres.index'))->assertRedirect();
+        $this->get(route('genres.create'))->assertRedirect();
+        $this->get(route('genres.show', $genre))->assertRedirect();
+        $this->get(route('genres.edit', $genre))->assertRedirect();
     }
 
     // Indexのテスト
