@@ -5,8 +5,9 @@ namespace Tests\Unit\Models;
 use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\Genre;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class BookTest extends TestCase
 {
@@ -14,62 +15,41 @@ class BookTest extends TestCase
     /**
      * A basic unit test example.
      */
-    // ユーザーが複数の書籍を登録できるかテスト（1対多）
-    public function test_user_user_has_many_books(): void
+    // BookモデルがUserモデルに属しているかテスト（1対1）
+    public function test_book_belongs_to_user(): void
     {
-        // テスト用ユーザーを1人作成
-        $user = User::factory()->create();
-        // このユーザーが登録した本を2冊ダミー作成
-        Book::factory()->count(2)->create(['user_id' => $user->id]);
-
-        // $user->bookがEloquentのコレクションで、件数が2件をテスト
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $user->books);
-        $this->assertCount(2, $user->books);
+        // テスト用の書籍を1冊作成（Factoryにより裏でuserも1人作成されて紐付く）
+        $book = Book::factory()->create();
+        // $book->userがUserクラスのインスタンスであるかテスト
+        $this->assertInstanceOf(User::class, $book->user);
     }
 
-    // ユーザーが複数のレビューを投稿できるかテスト（1対多）
-    public function test_user_has_many_reviews(): void
+    // Bookモデルが複数のReviewを保持できるかテスト（1対多）
+    public function test_has_many_reviews(): void
     {
-        // テスト用ユーザーを1人作成
-        $user = User::factory()->create();
+        // テスト用の書籍を1冊作成
+        $book = Book::factory()->create();
+        // この本に紐付くレビューを2件作成
+        Review::factory()->count(2)->create(['book_id' => $book->id]);
 
-        // このユーザーが投稿したレビューを3件ダミー作成
-        Review::factory()->count(3)->create(['user_id' => $user->id]);
-
-        // $user->reviewがEloquentのコレクションで、件数が3件をテスト
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $user->reviews);
-        $this->assertCount(3, $user->reviews);
+        // $book->reviewsがEloquentのコレクションであり、件数が2件であることをテスト
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $book->reviews);
+        $this->assertCount(2, $book->reviews);
     }
 
-    // ユーザーが書籍をお気に入り登録できるかテスト（多対多）
-    public function test_user_belongs_to_many_favorite_books(): void
+    // Bookモデルが複数のGenreを保持できるかテスト（多対多）
+    public function test_book_belongs_to_many_genres(): void
     {
-        // テスト用ユーザーを1人作成
-        $user = User::factory()->create();
-        // テスト用書籍を2冊作成
-        $books = Book::factory()->count(2)->create();
+        // テスト用の書籍を1冊作成
+        $book = Book::factory()->create();
+        // テスト用のジャンルを3件作成
+        $genres = Genre::factory()->count(3)->create();
 
-        // 中間テーブル「favorites」を介してお気に入り登録（紐付け）
-        $user->favoriteBooks()->attach($books->plunk('id'));
+        // 多対多の中間テーブル(book_genre)にジャンルを紐付け
+        $book->genres()->attach($genres->pluck('id'));
 
-        // お気に入りした本が2冊正しく引き抜けるかテスト
-        $this->assertCount(2, $user->favoriteBooks);
-        $this->assertInstanceOf(Book::class, $user->favoriteBooks->first());
-    }
-
-    // ユーザーがレビューにいいねできるかテスト（多対多）
-    public function test_user_belongs_to_many_liked_reviews(): void
-    {
-        // テスト用ユーザーを1人作成
-        $user = User::factory()->create();
-        // テスト用レビューを2件作成
-        $reviews = Review::factory()->count(2)->create();
-
-        // 中間テーブル「review_likes」を介していいね（紐付け）
-        $user->likedReviews()->attach($reviews->plunk('id'));
-
-        // いいねしたレビューが2件正しく引き抜けるかテスト
-        $this->assertCount(2, $user->likedReviews);
-        $this->assertInstanceOf(Review::class, $user->likedReviews->first());
+        // 紐付けた3件のジャンルが正しく取得できるかテスト
+        $this->assertCount(3, $book->genres);
+        $this->assertInstanceOf(Genre::class, $book->genres->first());
     }
 }

@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+{
 // 公開ページ
 // 書籍一覧
-{
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
 // 書籍のランキング
 Route::get('/ranking', [BookController::class, 'ranking'])->name('ranking.index');

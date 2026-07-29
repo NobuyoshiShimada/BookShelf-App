@@ -20,7 +20,7 @@ class ReviewFactory extends Factory
     {
         return [
             'book_id' => Book::factory(),
-            'usr_id' => User::factory(),
+            'user_id' => User::factory(),
             'rating' => fake()->numberBetween(1,5),
             'comment' => fake()->realText(50),
         ];
