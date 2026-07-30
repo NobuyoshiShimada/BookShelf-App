@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
+    private const GUEST_USER_ID = 999;
+
     public function index(Request $request)
     {
         $query = Book::with('genres')
@@ -51,13 +53,13 @@ class BookController extends Controller
 
         $book = Book::create([
             // 認証不要用の固定ユーザーID割り当て
-            'user_id' => 1,
+            'user_id' => self::GUEST_USER_ID,
             'title' => $validated['title'],
             'author' => $validated['author'],
             'isbn' => $validated['isbn'],
             'published_date' => $validated['published_date'],
-            'description' => $validated['description'],
-            'image_url' => $validated['image_url'],
+            'description' => $validated['description'] ?? null,
+            'image_url' => $validated['image_url'] ?? null,
         ]);
 
         if ($request->has('genres')) {
@@ -91,6 +93,10 @@ class BookController extends Controller
     // 書籍更新
     public function update(UpdateBookRequest $request, Book $book)
     {
+        if ($book->user_id !== self::GUEST_USER_ID) {
+            return response()->json(['message' => 'この書籍情報を更新する権限がありません。'], 403);
+        }
+
         $validated = $request->validated();
 
         $book->update([
@@ -98,8 +104,8 @@ class BookController extends Controller
             'author' => $validated['author'],
             'isbn' => $validated['isbn'],
             'published_date' => $validated['published_date'],
-            'description' => $validated['description'],
-            'image_url' => $validated['image_url'],
+            'description' => $validated['description'] ?? null,
+            'image_url' => $validated['image_url'] ?? null,
         ]);
 
         if ($request->has('genres')) {
@@ -115,6 +121,10 @@ class BookController extends Controller
     // 書籍削除
     public function destroy(Book $book)
     {
+        if ($book->user_id !== self::GUEST_USER_ID) {
+            return response()->json(['message' => 'この書籍を削除する権限がありません。'], 403);
+        }
+
         $book->genres()->sync([]);
         $book->reviews()->delete();
         $book->delete();

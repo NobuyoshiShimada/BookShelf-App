@@ -46,5 +46,14 @@ class UserSeeder extends Seeder
                 ['email' => $userData['email']], $userData
             );
         }
+
+        if (!User::where('id', 999)->exists()) {
+            User::create([
+                'id' => 999,
+                'name' => 'API Guest',
+                'email' => 'api_guest@example.com',
+                'password' => Hash::make('password'),
+            ]);
+        }
     }
 }
