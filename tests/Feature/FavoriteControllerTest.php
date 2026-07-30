@@ -1,6 +1,7 @@
 <?php
 
 namespace Tests\Feature;
+
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,7 +43,7 @@ class FavoriteControllerTest extends TestCase
 
         // ログインして、お気に入り一覧
         $response = $this->actingAs($this->user)
-        ->get(route('favorites.index'));
+            ->get(route('favorites.index'));
 
         // ステータス、画面、書籍情報を取得できるかテスト
         $response->assertStatus(200);
