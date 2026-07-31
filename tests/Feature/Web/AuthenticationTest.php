@@ -1,28 +1,24 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\web;
 
-use App\Models\Book;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    // login画面を表示
-    public function test_login(): void
+    public function test_ログイン画面の表示(): void
     {
         // ログイン画面を表示し、ステータス表示
         $response = $this->get('/login');
         $response->assertStatus(200);
     }
 
-    // 正しい情報でログインできるかテスト
-    public function test_login_owner(): void
+    public function test_正しい情報でログインできるかテスト(): void
     {
         // テスト用にユーザーを1人作成（パスワードをハッシュ化）
         $user = User::factory()->create([
@@ -41,8 +37,7 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect('/books');
     }
 
-    // 間違ったパスワードではログインできないかテスト
-    public function test_login_wrong_password(): void
+    public function test_間違ったパスワードではログインできない(): void
     {
         // テスト用ユーザー作成
         $user = User::factory()->create();
@@ -57,8 +52,7 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    // 新規ユーザー登録画面が正常に表示されるかテスト
-    public function test_register(): void
+    public function test_新規ユーザー登録画面が正常に表示される(): void
     {
         // 新規登録画面の表示
         $response = $this->get('/register');
@@ -67,8 +61,7 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    // 新規登録が正常にできるかテスト
-    public function test_register_new_user(): void
+    public function test_新規登録が正常にできる(): void
     {
         // テスト用ユーザー新規登録内容
         $response = $this->post('/register', [
@@ -90,8 +83,7 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect();
     }
 
-    // ログアウトできるかテスト
-    public function test_logout(): void
+    public function test_ログアウトできる(): void
     {
         // テスト用ユーザーを1人作成
         $user = User::factory()->create();

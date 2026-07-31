@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Web;
 
 use App\Models\Book;
 use App\Models\Genre;
@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class GenreControllerTest extends TestCase
+class GenreTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -21,22 +21,21 @@ class GenreControllerTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    // 未ログインユーザーのアクセス制限テスト
-    public function test_guest_access(): void
+    public function test_未ログインユーザーのアクセス制限(): void
     {
         // テスト用にジャンルを1件作成
         $genre = Genre::factory()->create();
 
         $this->assertGuest();
 
-        $this->get(route('genres.index'))->assertRedirect();
-        $this->get(route('genres.create'))->assertRedirect();
-        $this->get(route('genres.show', $genre))->assertRedirect();
-        $this->get(route('genres.edit', $genre))->assertRedirect();
+        // 認証が必要なページはすべてリダイレクト（302）されることをテスト
+        $this->get(route('genres.index'))->assertStatus(302);
+        $this->get(route('genres.create'))->assertStatus(302);
+        $this->get(route('genres.show', $genre))->assertStatus(302);
+        $this->get(route('genres.edit', $genre))->assertStatus(302);
     }
 
-    // Indexのテスト
-    public function test_index(): void
+    public function test_ログインユーザーはジャンル一覧画面のアクセスができる(): void
     {
         // テスト用にジャンルを2件作成
         Genre::factory()->create(['name' => 'B Genre']);
@@ -46,26 +45,24 @@ class GenreControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('genres.index'));
 
-        // ステータス、画面、情報取得をテスト
+        // ステータス（200）、ジャンル一覧画面、情報取得をテスト
         $response->assertStatus(200);
         $response->assertViewIs('genres.index');
         $response->assertViewHas('genres');
     }
 
-    // Createのテスト
-    public function test_create(): void
+    public function test_ログインユーザーはジャンルの新規登録画面へアクセスできる(): void
     {
         // ログインしてジャンル作成画面取得
         $response = $this->actingAs($this->user)
             ->get(route('genres.create'));
 
-        // ステータス、画面を取得
+        // ステータス（200、ジャンル新規登録画面を取得
         $response->assertStatus(200);
         $response->assertViewIs('genres.create');
     }
 
-    // Storeのテスト
-    public function test_store(): void
+    public function test_ログインユーザーは新規ジャンルの登録処理ができる(): void
     {
         // テスト用のジャンルを1件作成
         $genreData = ['name' => 'sample'];
@@ -74,13 +71,14 @@ class GenreControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->post(route('genres.store'), $genreData);
 
+        // データベースに新規登録したジャンルがあるかテスト
         $this->assertDatabaseHas('genres', ['name' => 'sample']);
+        // 新規登録後のリダイレクト先（genres.index）、新規登録後のメッセージのテスト
         $response->assertRedirect(route('genres.index'));
         $response->assertSessionHas('success', 'ジャンル「'.$genreData['name'].'」を新しく登録しました。');
     }
 
-    // Showのテスト
-    public function test_show(): void
+    public function test_ログインユーザーはジャンル詳細画面へアクセスができる(): void
     {
         // テスト用のジャンル1件作成
         $genre = Genre::factory()->create();
@@ -93,15 +91,14 @@ class GenreControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('genres.show', $genre));
 
-        // ステータス、画面、情報取得のテスト
+        // ステータス（200）、ジャンル詳細画面、情報取得のテスト
         $response->assertStatus(200);
         $response->assertViewIs('genres.show');
         $response->assertViewHas('genre', $genre);
         $response->assertViewHas('books');
     }
 
-    // Editのテスト
-    public function test_edit(): void
+    public function test_ログインユーザーはジャンル編集画面のアクセスができる(): void
     {
         // テスト用にジャンルを1件作成
         $genre = Genre::factory()->create();
@@ -110,14 +107,13 @@ class GenreControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('genres.edit', $genre));
 
-        // ステータス、画面、情報取得のテスト
+        // ステータス（200）、編集画面、情報取得のテスト
         $response->assertStatus(200);
         $response->assertViewIs('genres.edit');
         $response->assertViewHas('genre', $genre);
     }
 
-    // Updateのテスト
-    public function test_update(): void
+    public function test_ログインユーザーはジャンルの更新処理ができる(): void
     {
         // テスト用にジャンルを1件作成
         $genre = Genre::factory()->create([
@@ -136,25 +132,30 @@ class GenreControllerTest extends TestCase
             'name' => '新しい名前',
         ]);
 
-        // 更新後のリダイレクト先、更新成功時のメッセージのテスト
+        // 更新後のリダイレクト先（genres.index）、更新成功時のメッセージのテスト
         $genre->refresh();
         $response->assertRedirect(route('genres.index', $genre));
         $response->assertSessionHas('success', 'ジャンル「'.$genre->name.'」の情報を更新しました。');
     }
 
-    // Destroyのテスト
-    public function test_destroy(): void
+    public function test_ログインユーザーはジャンルの削除ができる(): void
     {
+        // テスト用にジャンルを1件作成
         $genre = Genre::factory()->create();
+        // テスト用に書籍を1件作成
         $book = Book::factory()->create();
+        // ジャンルを書籍に紐付ける
         $genre->books()->attach($book->id);
 
+        // ログインしてジャンルを削除する
         $response = $this->actingAs($this->user)
             ->delete(route('genres.destroy', $genre));
 
+        // データベースに書籍に紐付けたジャンルが削除されたかテスト
         $this->assertDatabaseMissing('genres', ['id' => $genre->id]);
         $this->assertDatabaseMissing('book_genre', ['genre_id' => $genre->id]);
 
+        // 削除後のリダイレクト先（genres.index）、削除成功時のメッセージのテスト
         $response->assertRedirect(route('genres.index'));
         $response->assertSessionHas('success', 'ジャンル「'.$genre->name.'」を削除しました。');
     }

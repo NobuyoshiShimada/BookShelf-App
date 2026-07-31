@@ -1,13 +1,13 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Web;
 
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class FavoriteControllerTest extends TestCase
+class FavoriteTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -20,20 +20,18 @@ class FavoriteControllerTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    // 未ログインユーザーのアクセス制限テスト
-    public function test_guest_access(): void
+    public function test_未ログインユーザーのアクセス制限(): void
     {
         // テスト用の書籍を1冊作成
         $book = Book::factory()->create();
 
         $this->assertGuest();
-
-        $this->get(route('favorites.index'))->assertRedirect();
-        $this->post(route('favorites.toggle', $book))->assertRedirect();
+        // 認証が必要なページはすべてリダイレクト（302）されることをテスト
+        $this->get(route('favorites.index'))->assertStatus(302);
+        $this->post(route('favorites.toggle', $book))->assertStatus(302);
     }
 
-    // Indexのテスト
-    public function test_index(): void
+    public function test_ログインユーザーはお気に入り一覧画面にアクセスできる(): void
     {
         // テスト用の書籍を1冊作成
         $book = Book::factory()->create();
@@ -45,14 +43,13 @@ class FavoriteControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('favorites.index'));
 
-        // ステータス、画面、書籍情報を取得できるかテスト
+        // ステータス（200）、お気に入り一覧画面、書籍情報を取得
         $response->assertStatus(200);
         $response->assertViewIs('favorites.index');
         $response->assertViewHas('books');
     }
 
-    // Toggleのテスト
-    public function test_toggle(): void
+    public function test_ログインユーザーはお気に入りの登録・解除ができる(): void
     {
         // テスト用の書籍を1冊作成
         $book = Book::factory()->create();

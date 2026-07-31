@@ -1,15 +1,14 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Web;
 
 use App\Models\Book;
 use App\Models\Genre;
-use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class BookControllerTest extends TestCase
+class BookCrudTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -22,10 +21,9 @@ class BookControllerTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    // 未ログインユーザーのアクセス制限テスト
-    public function test_guest_access(): void
+    public function test_未ログインユーザーのアクセス制限(): void
     {
-        // テスト用の書籍を1冊作成
+        // テスト用の書籍を1件作成
         $book = Book::factory()->create();
 
         // 認証が必要なページはすべてリダイレクト（302）されることをテスト
@@ -36,12 +34,11 @@ class BookControllerTest extends TestCase
         $this->delete(route('books.destroy', $book))->assertStatus(302);
     }
 
-    // indexのテスト
-    public function test_index(): void
+    public function test_書籍一覧の画面にアクセスできる(): void
     {
         // テスト用のジャンルを1件作成
         $genre = Genre::factory()->create();
-        // テスト用の書籍を1冊作成
+        // テスト用の書籍を1件作成
         $book = Book::factory()->create();
         // この書籍にジャンルを紐付ける
         $book->genres()->attach($genre->id);
@@ -55,8 +52,7 @@ class BookControllerTest extends TestCase
         $response->assertViewHas('books');
     }
 
-    // createのテスト
-    public function test_create(): void
+    public function test_ログインユーザーは新規書籍登録画面にアクセスできる(): void
     {
         // テスト用にジャンルを3件を作成
         Genre::factory()->count(3)->create();
@@ -65,19 +61,18 @@ class BookControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('books.create'));
 
-        // ステータス、画面、取得情報をテスト
+        // ステータス(200)、新規書籍登録画面へのアクセス、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('books.create');
         $response->assertViewHas('genres');
     }
 
-    // Storeのテスト
-    public function test_store(): void
+    public function test_ログインユーザーは新規書籍登録処理ができる(): void
     {
         // テスト用にジャンルを2件作成
         $genres = Genre::factory()->count(2)->create();
 
-        // テスト用の書籍のダミーデータ作成
+        // テスト用の書籍の詳細情報1件作成
         $bookDate = [
             'title' => 'サンプル書籍',
             'author' => 'テスト太郎',
@@ -101,30 +96,28 @@ class BookControllerTest extends TestCase
         $book = Book::where('title', 'サンプル書籍')->first();
         $this->assertCount(2, $book->genres);
 
-        // 登録後のリダイレクト先、登録成功時のメッセージのテスト
+        // 登録後のリダイレクト先（books.index）、登録成功時のメッセージのテスト
         $response->assertRedirect(route('books.index'));
         $response->assertSessionHas('success', '書籍「'.$book->title.'」を新しく登録しました。');
     }
 
-    // Showのテスト
-    public function test_show(): void
+    public function test_未ログインユーザーは書籍詳細にアクセスできる(): void
     {
-        // テスト用の書籍を1冊作成
+        // テスト用の書籍を1件作成
         $book = Book::factory()->create();
 
         // 書籍詳細を取得
         $response = $this->get(route('books.show', $book));
 
-        // ステータス、画面、取得情報をテスト
+        // ステータス（200）、書籍詳細画面へアクセス、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('books.show');
         $response->assertViewHas('book');
     }
 
-    // Editのテスト（作成者本人）
-    public function test_edit_owner(): void
+    public function test_ログインユーザー本人が登録した書籍の編集画面はアクセスできる(): void
     {
-        // テスト用に書籍を1冊作成
+        // テスト用に書籍を1件作成
         $book = Book::factory()->create(['user_id' => $this->user->id]);
         // テスト用にジャンルを2件作成
         Genre::factory()->count(2)->create();
@@ -133,32 +126,31 @@ class BookControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('books.edit', $book));
 
-        // ステータス、画面、取得情報をテスト
+        // ステータス（200）、書籍編集画面へのアクセス、取得情報をテスト
         $response->assertStatus(200);
         $response->assertViewIs('books.edit');
         $response->assertViewHas('book');
         $response->assertViewHas('genres');
     }
 
-    // Editのテスト（作成者が他人）
-    public function test_not_owner(): void
+    public function test_ログインユーザーは他人が登録した書籍の編集画面はアクセスできない(): void
     {
-        // テスト用の他人ユーザー1人作成
+        // テスト用の他人ユーザー1件作成
         $otherUser = User::factory()->create();
-        // テスト用に他人が作成者の書籍を1冊作成
+        // テスト用に他人が作成者の書籍を1件作成
         $book = Book::factory()->create(['user_id' => $otherUser->id]);
 
         // ログインして編集画面情報を取得するがエラーになる
         $response = $this->actingAs($this->user)
             ->get(route('books.edit', $book));
 
+        // ステータス（403）
         $response->assertStatus(403);
     }
 
-    // Updateのテスト
-    public function test_update(): void
+    public function test_ログインユーザー本人が登録した書籍は更新処理ができる(): void
     {
-        // テスト用のユーザーを1人作成
+        // テスト用のユーザーを1件作成
         $book = Book::factory()->create(['user_id' => $this->user->id]);
         // テスト用のジャンルを2件作成
         $genres = Genre::factory()->count(2)->create();
@@ -190,8 +182,7 @@ class BookControllerTest extends TestCase
         $response->assertSessionHas('success', '書籍「'.$book->title.'」の情報を更新しました。');
     }
 
-    // Destroyのテスト
-    public function test_destroy(): void
+    public function test_ログインユーザー本人が登録した書籍は削除ができる(): void
     {
         // テスト用のユーザーを1人作成
         $book = Book::factory()->create(['user_id' => $this->user->id]);
@@ -212,25 +203,5 @@ class BookControllerTest extends TestCase
         // 削除後のリダイレクト先、削除成功時のメッセージのテスト
         $response->assertRedirect(route('books.index'));
         $response->assertSessionHas('success', '書籍「'.$book->title.'」をデータベースから完全に削除しました。');
-    }
-
-    // Rankingのテスト
-    public function test_ranking(): void
-    {
-        // テスト用の書籍を1冊作成
-        $book = Book::factory()->create();
-        // テスト用のレビューを1件作成
-        Review::factory()->create([
-            'book_id' => $book->id,
-            'rating' => 5,
-        ]);
-
-        // ランキングの画面を取得
-        $response = $this->get(route('ranking.index'));
-
-        // ステータス、画面、取得情報をテスト
-        $response->assertStatus(200);
-        $response->assertViewIs('ranking.index');
-        $response->assertViewHas('rankedBooks');
     }
 }
