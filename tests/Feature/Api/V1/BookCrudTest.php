@@ -3,17 +3,17 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Book;
-use App\Models\User;
 use App\Models\Genre;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class BookControllerTest extends TestCase
+class BookCrudTest extends TestCase
 {
     use RefreshDatabase;
 
     private User $guestUser;
+
     private const GUEST_USER_ID = 999;
 
     protected function setUp(): void
@@ -25,10 +25,10 @@ class BookControllerTest extends TestCase
         ]);
     }
 
-    public function 認証なしで書籍一覧を取得できる(): void
+    public function test_認証なしで書籍一覧を取得できる(): void
     {
         Book::factory()->count(2)->create([
-            'user_id' => self::GUEST_USER_ID
+            'user_id' => self::GUEST_USER_ID,
         ]);
 
         Book::factory()->create([
@@ -38,11 +38,13 @@ class BookControllerTest extends TestCase
         $response = $this->get('/api/v1/books');
 
         $response->assertStatus(200)
-        ->assertJsonCount(3, 'data');
+            ->assertJsonCount(3, 'data');
     }
 
-    public function 認証無しで新規書籍を登録でき、自動的にゲストIDが割り当てられる()
+    public function test_認証無しで新規書籍を登録でき、自動的にゲストIDが割り当てられる(): void
     {
+        $genre = Genre::factory()->create();
+
         $bookData = [
             'title' => 'テスト駆動開発',
             'author' => 'Kent Beck',
@@ -50,6 +52,7 @@ class BookControllerTest extends TestCase
             'published_date' => '2013-10-14',
             'description' => 'テストの解説書です。',
             'image_url' => 'https://example.com',
+            'genres' => [$genre->id],
         ];
 
         // 認証なし（ゲスト）でPOSTリクエスト
@@ -66,7 +69,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 認証なしで書籍の詳細を取得できる()
+    public function test_認証なしで書籍の詳細を取得できる(): void
     {
         $book = Book::factory()->create(['user_id' => self::GUEST_USER_ID]);
 
@@ -77,11 +80,11 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function ゲストが登録した書籍を認証なしで更新できる()
+    public function test_ゲストが登録した書籍を認証なしで更新できる(): void
     {
         $book = Book::factory()->create([
             'user_id' => self::GUEST_USER_ID,
-            'title' => '古いタイトル'
+            'title' => '古いタイトル',
         ]);
 
         $genre = Genre::factory()->create();
@@ -106,7 +109,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 他の通常ユーザーが登録した書籍の更新は拒否される()
+    public function test_他の通常ユーザーが登録した書籍の更新は拒否される(): void
     {
         // 他のユーザー（ID: 1等）が登録した本を作成
         $otherUser = User::factory()->create();
@@ -131,7 +134,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function ゲストが登録した書籍を認証なしで削除できる()
+    public function test_ゲストが登録した書籍を認証なしで削除できる(): void
     {
         $book = Book::factory()->create(['user_id' => self::GUEST_USER_ID]);
 
@@ -142,7 +145,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 他の通常ユーザーが登録した書籍の削除は拒否される()
+    public function test_他の通常ユーザーが登録した書籍の削除は拒否される(): void
     {
         $otherUser = User::factory()->create();
         $book = Book::factory()->create(['user_id' => $otherUser->id]);
@@ -154,6 +157,4 @@ class BookControllerTest extends TestCase
         $this->assertDatabaseHas('books', ['id' => $book->id]);
 
     }
-
-
 }

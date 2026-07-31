@@ -47,7 +47,7 @@ class UserSeeder extends Seeder
             );
         }
 
-        if (!User::where('id', 999)->exists()) {
+        if (! User::where('id', 999)->exists()) {
             User::create([
                 'id' => 999,
                 'name' => 'API Guest',

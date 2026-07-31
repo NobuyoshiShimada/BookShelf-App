@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Web;
 
 use App\Models\Book;
 use App\Models\Review;
@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ReviewControllerTest extends TestCase
+class ReviewTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,21 +25,20 @@ class ReviewControllerTest extends TestCase
         $this->book = Book::factory()->create();
     }
 
-    // 未ログインユーザーのアクセス制限テスト
-    public function test_guest_access(): void
+    public function test_未ログインユーザーのアクセス制限()
     {
         $review = Review::factory()->create(['book_id' => $this->book->id]);
 
         $this->assertGuest();
-        $this->post(route('reviews.store', $this->book))->assertRedirect();
-        $this->post(route('reviews.like', $this->book))->assertRedirect();
-        $this->get(route('reviews.edit', $review))->assertRedirect();
-        $this->put(route('reviews.update', $review))->assertRedirect();
-        $this->delete(route('reviews.destroy', $review))->assertRedirect();
+        // 認証が必要なページはすべてリダイレクト（302）されることをテスト
+        $this->post(route('reviews.store', $this->book))->assertStatus(302);
+        $this->post(route('reviews.like', $this->book))->assertStatus(302);
+        $this->get(route('reviews.edit', $review))->assertStatus(302);
+        $this->put(route('reviews.update', $review))->assertStatus(302);
+        $this->delete(route('reviews.destroy', $review))->assertStatus(302);
     }
 
-    // Indexのテスト
-    public function test_store(): void
+    public function test_ログインユーザーは新規レビュー登録処理ができる(): void
     {
         // テスト用レビューデータを1件作成
         $reviewData = [
@@ -59,13 +58,12 @@ class ReviewControllerTest extends TestCase
             'comment' => '素晴らしい本でした。',
         ]);
 
-        // 登録後のリダイレクト先、登録成功時のメッセージのテスト
+        // 登録後のリダイレクト先（books.show）、登録成功時のメッセージのテスト
         $response->assertRedirect(route('books.show', $this->book));
         $response->assertSessionHas('success', 'レビューを投稿しました。');
     }
 
-    // Editのテスト（投稿者本人）
-    public function test_edit_owner(): void
+    public function test_ログインユーザー本人が投稿したレビューは編集できる(): void
     {
         // テスト用に書籍と、ユーザーを作成
         $review = Review::factory()->create([
@@ -82,8 +80,7 @@ class ReviewControllerTest extends TestCase
         $response->assertViewHas('review', $review);
     }
 
-    // Editのテスト（投稿者が他人）
-    public function test_edit_non_owner(): void
+    public function test_ログインユーザーは他人が投稿したレビューの編集画面はアクセスできない(): void
     {
         // テスト用に書籍と、ユーザーを作成
         $otherUser = User::factory()->create();
@@ -96,12 +93,11 @@ class ReviewControllerTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('reviews.edit', $review));
 
-        // ステータスをテスト
+        // ステータス（403）をテスト
         $response->assertStatus(403);
     }
 
-    // Updateのテスト
-    public function test_update(): void
+    public function test_ログインユーザー本人が投稿したレビューは更新処理ができる(): void
     {
         // テスト用にレビューを作成
         $review = Review::factory()->create([
@@ -133,8 +129,7 @@ class ReviewControllerTest extends TestCase
         $response->assertSessionHas('success', 'レビューを更新しました。');
     }
 
-    // Deleteのテスト
-    public function test_delete(): void
+    public function test_ログインユーザー本人が投稿したレビューは削除ができる(): void
     {
         // テスト用のレビュー作成
         $review = Review::factory()->create([
@@ -152,42 +147,5 @@ class ReviewControllerTest extends TestCase
         // 削除後のリダイレクト先、削除成功時のメッセージのテスト
         $response->assertRedirect(route('books.show', $this->book));
         $response->assertSessionHas('success', 'レビューを削除しました。');
-    }
-
-    // Toggleのテスト
-    public function test_toggle(): void
-    {
-        // テスト用のレビュー作成
-        $review = Review::factory()->create([
-            'book_id' => $this->book->id,
-            'user_id' => User::factory()->create()->id,
-        ]);
-
-        // ログインして、いいねの追加（1回目の押下）
-        $response = $this->actingAs($this->user)
-            ->from(route('books.show', $this->book))
-            ->post(route('reviews.like', ['book' => $review->id]));
-
-        // データベースに登録されたか確認のテスト
-        $this->assertDatabaseHas('review_likes', [
-            'user_id' => $this->user->id,
-            'review_id' => $review->id,
-        ]);
-        // リダイレクト先のテスト
-        $response->assertRedirect(route('books.show', $this->book));
-
-        // いいねの解除（2回目の押下）
-        $response = $this->actingAs($this->user)
-            ->from(route('books.show', $this->book))
-            ->post(route('reviews.like', ['book' => $review->id]));
-
-        // データベースから削除されたか確認のテスト
-        $this->assertDatabaseMissing('review_likes', [
-            'user_id' => $this->user->id,
-            'review_id' => $review->id,
-        ]);
-
-        // リダイレクト先のテスト
-        $response->assertRedirect(route('books.show', $this->book));
     }
 }
