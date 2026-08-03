@@ -3,7 +3,7 @@
 ## 環境構築
 
 **git cloneでソースをローカル環境にダウンロード**
-
+---
 1. プロジェクトを作成したいフォルダに移動してgit cloneでダウンロード
 ```bash
 git clone git@github.com:NobuyoshiShimada/BookShelf-App.git
@@ -14,7 +14,7 @@ cd bookshelf-app
 ```
 
 **Laravel sailをインストール**
-
+---
 3. Laravel Sailをインストール
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer require laravel/sail --dev
@@ -47,7 +47,7 @@ DB_PASSWORD=password
 **重要**: DB_HOST は localhost や 127.0.0.1 ではなく、Dockerコンテナ名である **mysql** を指定します。
 
 **フロントエンドのセットアップ（Vite & Tailwind CSS）**
-
+---
 > 本プロジェクトでは、フロントエンドのスタイリングにTailwind CSSを使用します。
 以下の手順でセットアップを行ってください。
 
@@ -104,7 +104,7 @@ sail npm run dev
 注意: 開発中は常にこのコマンドを実行した状態にしておいてください。
 
 **phpMyAdminの追加**
-
+---
 12. compose.yaml を開き、mysql サービスの後に以下の設定を追加してください。
 ```bash
 phpmyadmin:
@@ -122,7 +122,7 @@ phpmyadmin:
 ```
 
 **Sailの起動とエイリアス設定**
-
+---
 13. Sailをバックグラウンドで起動
 ```bash
 ./vendor/bin/sail up -d
@@ -181,6 +181,7 @@ sail artisan migrate --seed
 | **remember_token** | string | Nullable | ログイン保持トークン |
 | **created_at** | timestamp | Not Null | レコード作成日時 |
 | **updated_at** | timestamp | Not Null | レコード更新日時 |
+
 
 ### 2. books テーブル（書籍管理）
 
@@ -353,21 +354,29 @@ erDiagram
 | **PUT** | `/v1/books/{book}` | 既存の書籍情報の更新 | `title`, `author`, `isbn`, `published_date`, `description`, `image_url`, `genres` (配列) |
 | **DELETE** | `/v1/books/{book}` | 書籍の削除 (関連レビュー、中間テーブルも連動削除) | パスパラメータに書籍の `id` を指定 |
 
+## テストアカウント
+
+name:山田 太郎
+
+email:yamada@example.com
+
+password:password
+
+---
+
+name:鈴木 花子
+
+email:suzuki@example.com
+
+password:password
+
 ## テストの実行方法（PHPUnit）
 
 本システムでは、PHPUnitおよびLaravelのテスト機能を活用して、アプリケーションの品質（Web画面、公開API、認証機能、データ構造など）をテストしています。
 
-### 1. テスト実行前の準備
 
-テスト用の環境設定（データベース初期化など）を正常に行うため、以下の準備を確認してください。
-
-```bash
-# テストでSQLite（インメモリ以外）を使用する場合は、あらかじめファイルを用意します
-touch database/database.sqlite
-```
-
-### 2. テストの実行コマンド
-
+### 1. テストの実行コマンド
+---
 状況に応じて以下のコマンドを使い分けてテストを実行します。
 
 - **すべてのテストを一括実行する:**
@@ -393,7 +402,8 @@ touch database/database.sqlite
   sail artisan test tests/Feature/Api/V1/BookCudTest.php
   ```
 
-### 3. カバレッジの計測 ### 
+### 2. カバレッジの計測 ### 
+---
 1. .env ファイルを開き、下記の一行を加えてください。
 ```bash
 SAIL_XDEBUG_MODE=coverage
