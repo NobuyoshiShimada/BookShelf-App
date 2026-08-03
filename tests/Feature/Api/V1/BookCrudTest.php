@@ -41,7 +41,7 @@ class BookCrudTest extends TestCase
             ->assertJsonCount(3, 'data');
     }
 
-    public function test_認証無しで新規書籍を登録でき、自動的にゲストIDが割り当てられる(): void
+    public function test_認証無しで新規書籍を登録でき、自動的にゲスト_i_dが割り当てられる(): void
     {
         $genre = Genre::factory()->create();
 
