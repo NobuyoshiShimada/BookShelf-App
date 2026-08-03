@@ -156,7 +156,7 @@ sail artisan migrate --seed
 - Laravel 10.50.2
 - DB: MySQL 8.4.11
 - フロントエンド: Vite, Tailwind CSS ^3.4.0, @tailwindcss/forms
-- 開発ツール: Docker, Laravel Sail, phpMyAdmin
+- 開発ツール: Docker, Laravel Sail, phpMyAdmin,Postman
 
 ## URL
 - 開発環境：http://localhost/books
