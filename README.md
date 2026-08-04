@@ -259,6 +259,34 @@ sail artisan migrate --seed
 | **-** | - | Unique Key (`review_id`, `user_id`) | 同一レビューの重複いいねを防ぐ制約 |
 
 
+### 8. reading_plans テーブル（読書計画管理）
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| **id** | bigint | Primary Key, Auto Increment | 計画ID |
+| **user_id** | bigint | Foreign Key (users.id), Cascade Delete | 計画を立てたユーザーID |
+| **book_id** | bigint | Foreign Key (books.id), Cascade Delete | 対象の書籍ID |
+| **target_date** | date | Not Null | 読了の目標期日 |
+| **status** | string | Not Null (デフォルト: 'unread') | 計画状態 ('unread', 'reading', 'completed') |
+| **created_at** | timestamp | Not Null | レコード作成日時 |
+| **updated_at** | timestamp | Not Null | レコード更新日時 |
+| **-** | - | Unique Key (`user_id`, `book_id`) | 同一書籍に対する重複計画を防ぐ制約 |
+
+
+### 9. notifications テーブル（通知管理）
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| **id** | uuid | Primary Key | 通知ID (UUID) |
+| **type** | string | Not Null | 通知の種別 (通知クラス名) |
+| **notifiable_type** | string | Not Null | 通知対象のモデル名 (`App\Models\User`) |
+| **notifiable_id** | bigint | Not Null | 受信者のユーザーID |
+| **data** | text | Not Null | 通知内容 (タイトルや書籍ID等のJSONデータ) |
+| **read_at** | timestamp | Nullable | 既読日時 (未読の場合は Null) |
+| **created_at** | timestamp | Not Null | レコード作成日時 |
+| **updated_at** | timestamp | Not Null | レコード更新日時 |
+
+
 ## ER図
 ```mermaid
 erDiagram
@@ -266,10 +294,14 @@ erDiagram
     User ||--o{ Review : "投稿する (reviews)"
     User ||--o{ Favorite : "お気に入りする (favorites)"
     User ||--o{ ReviewLike : "いいねする (review_likes)"
+    User ||--o{ ReadingPlan : "計画する (reading_plans)"
+    User ||--o{ Notification : "通知を受信する (notifications)"
     
     Book ||--o{ Review : "レビューを持つ (reviews)"
     Book ||--o{ BookGenre : "ジャンルを持つ (book_genre)"
     Book ||--o{ Favorite : "お気に入りされる (favorites)"
+    Book ||--o{ ReadingPlan : "計画される (reading_plans)"
+
     
     Genre ||--o{ BookGenre : "本に割り当てられる (book_genre)"
     Review ||--o{ ReviewLike : "いいねされる (review_likes)"
@@ -335,6 +367,27 @@ erDiagram
         bigint id PK
         bigint review_id FK "reviews.id, UK(review_id, user_id)"
         bigint user_id FK "users.id, UK(review_id, user_id)"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ReadingPlan {
+        bigint id PK
+        bigint book_id FK "books.id, UK(book_id, user_id)"
+        bigint user_id FK "users.id, UK(book_id, user_id)"
+        date target_date
+        string status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    Notification {
+        uuid id PK
+        string type
+        string notifiable_type
+        bigint notifiable_id FK "users.id (ポリモーフィック)"
+        text data
+        timestamp read_at
         timestamp created_at
         timestamp updated_at
     }
