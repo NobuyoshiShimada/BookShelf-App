@@ -4,10 +4,13 @@ erDiagram
     User ||--o{ Review : "投稿する (reviews)"
     User ||--o{ Favorite : "お気に入りする (favorites)"
     User ||--o{ ReviewLike : "いいねする (review_likes)"
+    User ||--o{ ReadingPlan : "読書計画作成する (reading_plans)"
     
     Book ||--o{ Review : "レビューを持つ (reviews)"
     Book ||--o{ BookGenre : "ジャンルを持つ (book_genre)"
     Book ||--o{ Favorite : "お気に入りされる (favorites)"
+    Book ||--o{ ReadingPlan : "読書計画の本 (reading_plans)"
+
     
     Genre ||--o{ BookGenre : "本に割り当てられる (book_genre)"
     Review ||--o{ ReviewLike : "いいねされる (review_likes)"
@@ -76,4 +79,15 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+        ReadingPlan {
+        bigint id PK
+        bigint book_id FK "books.id, UK(book_id, user_id)"
+        bigint user_id FK "users.id, UK(book_id, user_id)"
+        date target_date
+        string status "default(unread)"
+        timestamp created_at
+        timestamp updated_at
+    }
+
 ```
