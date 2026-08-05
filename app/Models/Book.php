@@ -19,6 +19,10 @@ class Book extends Model
         'image_url',
     ];
 
+    protected $casts = [
+        'published_date' => 'date',
+    ];
+
     // この本を登録したユーザー(多対1)
     public function user()
     {
