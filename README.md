@@ -13,6 +13,7 @@ git clone git@github.com:NobuyoshiShimada/BookShelf-App.git
 cd bookshelf-app
 ```
 
+---
 **Laravel sailをインストール**
 ---
 3. Laravel Sailをインストール
@@ -33,7 +34,9 @@ mysql:
     environment:
 ```
 
+---
 **.envファイルの設定**
+---
 
 5. .env ファイルを開き、データベース接続情報が以下と一致していることを確認します。
 ```bash
@@ -46,6 +49,7 @@ DB_PASSWORD=password
 ```
 **重要**: DB_HOST は localhost や 127.0.0.1 ではなく、Dockerコンテナ名である **mysql** を指定します。
 
+---
 **フロントエンドのセットアップ（Vite & Tailwind CSS）**
 ---
 > 本プロジェクトでは、フロントエンドのスタイリングにTailwind CSSを使用します。
@@ -103,6 +107,7 @@ sail npm run dev
 ```
 注意: 開発中は常にこのコマンドを実行した状態にしておいてください。
 
+---
 **phpMyAdminの追加**
 ---
 12. compose.yaml を開き、mysql サービスの後に以下の設定を追加してください。
@@ -120,7 +125,31 @@ phpmyadmin:
     depends_on:
         - mysql
 ```
+---
+**Google Books API キーの設定（ISBN自動入力用）**
+---
+書籍登録画面でISBNから書籍情報を自動補完する機能を利用するには、Google Books APIのアクセスキーが必要です。設定を行わない場合、回数制限エラー（429 Too Many Requests）が発生することがあります。
 
+### 1. API キーの取得手順
+
+1. **Google Cloud Console**（[https://google.com](https://google.com)）にGoogleアカウントでログインします。
+2. 画面上部のプロジェクト選択メニューから **「新しいプロジェクト」** を作成します。
+3. サイドメニューの「APIとサービス」 > 「ライブラリ」を開き、検索窓に **「Books API」** と入力して選択し、**「有効にする」** をクリックします。
+4. 「APIとサービス」 > 「認証情報」画面を開き、画面上部の **「+ 認証情報を作成」** から **「APIキー」** を選択します。
+5. 作成された長い文字列（APIキー）をコピーします。
+
+### 2. プロジェクトへの反映方法
+
+- プロジェクト直下の `.env` ファイルを開き、最下部にコピーしたAPIキーを追記してください。
+
+```env
+# Google Books API 設定
+GOOGLE_BOOKS_API_KEY=YourActualAPIKeyHere...
+```
+
+> 💡 **注意**: `.env` ファイルはGitの管理対象外（`.gitignore` に登録済み）となっているため、取得した秘密のAPIキーが外部（GitHub等）に公開される心配はありません。
+
+---
 **Sailの起動とエイリアス設定**
 ---
 13. Sailをバックグラウンドで起動
@@ -150,6 +179,7 @@ sail artisan migrate --seed
 > ※既存のデータベースをリセットしたい場合は以下を実行してください。
 **`sail artisan migrate:fresh --seed`**
 
+---
 ## 使用技術(実行環境)
 - macOS Swquoia 15.6
 - PHP 8.5.7
@@ -158,16 +188,20 @@ sail artisan migrate --seed
 - フロントエンド: Vite, Tailwind CSS ^3.4.0, @tailwindcss/forms
 - 開発ツール: Docker, Laravel Sail, phpMyAdmin,Postman
 
+---
 ## URL
 - 開発環境：http://localhost/books
 - phpMyAdmin:：http://localhost:8080/
 
+---
 ## 作成者
 島田 延佳
 
 ( Nobuyoshi Shimada )
 
+---
 ## テーブル仕様
+
 
 ### 1. users テーブル（ユーザー管理）
 
@@ -287,6 +321,7 @@ sail artisan migrate --seed
 | **updated_at** | timestamp | Not Null | レコード更新日時 |
 
 
+---
 ## ER図
 ```mermaid
 erDiagram
@@ -393,6 +428,7 @@ erDiagram
     }
 ```
 
+---
 ## 公開APIエンドポイント一覧
 
 すべてのAPIルートは認証不要でアクセス可能です。ベースURL（例: `http://127.0.0`）に続けて以下のパスをリクエストしてください。
@@ -407,6 +443,7 @@ erDiagram
 | **PUT** | `/v1/books/{book}` | 既存の書籍情報の更新 | `title`, `author`, `isbn`, `published_date`, `description`, `image_url`, `genres` (配列) |
 | **DELETE** | `/v1/books/{book}` | 書籍の削除 (関連レビュー、中間テーブルも連動削除) | パスパラメータに書籍の `id` を指定 |
 
+---
 ## テストアカウント
 
 name:山田 太郎
@@ -423,11 +460,12 @@ email:suzuki@example.com
 
 password:password
 
+---
 ## テストの実行方法（PHPUnit）
 
 本システムでは、PHPUnitおよびLaravelのテスト機能を活用して、アプリケーションの品質（Web画面、公開API、認証機能、データ構造など）をテストしています。
 
-
+---
 ### 1. テストの実行コマンド
 ---
 状況に応じて以下のコマンドを使い分けてテストを実行します。
@@ -455,6 +493,7 @@ password:password
   sail artisan test tests/Feature/Api/V1/BookCudTest.php
   ```
 
+---
 ### 2. カバレッジの計測 ### 
 ---
 1. .env ファイルを開き、下記の一行を加えてください。

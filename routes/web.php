@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\ReadingPlanController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,8 @@ Route::get('/ranking', [BookController::class, 'ranking'])->name('ranking.index'
 Route::middleware(['auth'])->group(function () {
     // 新規書籍登録
     Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
+    // ISBN検索
+    Route::get('/books/isbn/{isbn}', [BookController::class, 'searchIsbn'])->name('books.isbn.search');
     // 新規書籍登録処理
     Route::post('/books', [BookController::class, 'store'])->name('books.store');
     // 書籍編集
@@ -65,6 +68,31 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/genres/{genre}', [GenreController::class, 'update'])->name('genres.update');
     // ジャンル削除
     Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('genres.destroy');
+
+    // 読書計画一覧の表示
+    Route::get('/reading-plants', [ReadingPlanController::class, 'index'])->name('reading-plans.index');
+    // 読書計画新規作成画面の表示
+    Route::get('/reading-plants/create', [ReadingPlanController::class, 'create'])->name('reading-plants.create');
+    // 読書計画の新規登録処理
+    Route::post('/reading-plants', [ReadingPlanController::class, 'store'])->name('reading-plans.store');
+    // 読書計画の編集画面の表示
+    Route::get('/reading-plans/{plan}/edit', [ReadingPlanController::class, 'edit'])->name('reading-plans.edit');
+    // 読書計画の更新処理
+    Route::post('/reading-plans/{plan}', [ReadingPlanController::class, 'update'])->name('reading-plans.update');
+
+
+    // マイリポート
+    Route::get('/reports', function () {
+        return view('reports.index');
+    })->name('reports.index');
+    // Route::get('/reports', [ReadingReportController::class, 'index'])->name('reports.index');
+
+    // 通知一覧の表示
+    // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+
+    Route::get('/notifications', function() {
+        return view('notifications.index');
+    })->name('notifications.index');
 
 });
 
