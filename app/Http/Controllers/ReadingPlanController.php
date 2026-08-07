@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use App\Models\ReadingPlan;
 use App\Enums\ReadingPlanStatus;
 use App\Http\Requests\StoreReadingPlanRequest;
 use App\Http\Requests\UpdateReadingPlanRequest;
-use App\Http\Requests\updateReadingPlanRequest as RequestsUpdateReadingPlanRequest;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Carbon;
+use App\Models\Book;
+use App\Models\ReadingPlan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class ReadingPlanController extends Controller
 {
@@ -23,16 +22,15 @@ class ReadingPlanController extends Controller
         $currentStatus = $request->input('status');
 
         $query = ReadingPlan::with('book')
-        ->where('user_id', Auth::id());
+            ->where('user_id', Auth::id());
 
-        if ($currentStatus && ReadingPlanStatus::tryFrom($currentStatus))
-            {
-                $query->where('status', $currentStatus);
-            }
+        if ($currentStatus && ReadingPlanStatus::tryFrom($currentStatus)) {
+            $query->where('status', $currentStatus);
+        }
 
-            $readingPlans = $query->latest('target_date')->get();
+        $readingPlans = $query->latest('target_date')->get();
 
-            $readingPlans->transform(function ($plan) {
+        $readingPlans->transform(function ($plan) {
             // status がただの文字列なら、Enumオブジェクトに強制変換
             if (is_string($plan->status)) {
                 $plan->status = ReadingPlanStatus::tryFrom($plan->status);
@@ -51,7 +49,7 @@ class ReadingPlanController extends Controller
             return $plan;
         });
 
-            return view('reading-plans.index', compact('readingPlans', 'currentStatus'));
+        return view('reading-plans.index', compact('readingPlans', 'currentStatus'));
     }
 
     // 新規読書計画作成画面の表示
@@ -69,14 +67,14 @@ class ReadingPlanController extends Controller
         $validated = $request->validated();
 
         ReadingPlan::create([
-            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+            'user_id' => Auth::id(),
             'book_id' => $validated['book_id'],
             'target_date' => $validated['target_date'],
             'status' => ReadingPlanStatus::Unread,
         ]);
 
         return redirect()->route('reading-plans.index')
-        ->with('success', '新しい読書計画を作成しました。');
+            ->with('success', '新しい読書計画を作成しました。');
     }
 
     // 読書計画編集画面の表示
@@ -86,9 +84,9 @@ class ReadingPlanController extends Controller
 
         $this->authorize('view', $readingPlan);
 
-            $readingPlan->load('book');
+        $readingPlan->load('book');
 
-            return view('reading-plans.edit', compact('readingPlan'));
+        return view('reading-plans.edit', compact('readingPlan'));
     }
 
     // 読書計画の更新処理
@@ -98,18 +96,18 @@ class ReadingPlanController extends Controller
 
         $this->authorize('update', $readingPlan);
 
-            $validated = $request->validated();
+        $validated = $request->validated();
 
-            $readingPlan->update([
-                'target_date' => $validated['target_date'],
-            ]);
+        $readingPlan->update([
+            'target_date' => $validated['target_date'],
+        ]);
 
-            return redirect()->route('reading-plans.index')
+        return redirect()->route('reading-plans.index')
             ->with('success', '読書計画の期日を更新しました。');
     }
 
     // 読書計画の削除処理
-    public function destroy ($id)
+    public function destroy($id)
     {
         $readingPlan = ReadingPlan::findOrFail($id);
 
@@ -122,7 +120,7 @@ class ReadingPlanController extends Controller
         $readingPlan->delete();
 
         return redirect()->route('reading-plans.index')
-        ->with('success', '読書計画を削除しました。');
+            ->with('success', '読書計画を削除しました。');
     }
 
     // 読書計画の読了処理
@@ -138,7 +136,7 @@ class ReadingPlanController extends Controller
         ]);
 
         return redirect()->route('reading-plans.index')
-        ->with('success', '書籍を読了しました。');
+            ->with('success', '書籍を読了しました。');
 
     }
 }

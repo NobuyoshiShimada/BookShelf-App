@@ -20,7 +20,6 @@ class ReadingPlanPolicy
         return $user->id === $readingPlan->user_id;
     }
 
-
     public function delete(User $user, ReadingPlan $readingPlan): bool
     {
         return $user->id === $readingPlan->user_id;

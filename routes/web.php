@@ -4,8 +4,8 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\ReadingPlanController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReadingReportController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -91,7 +91,7 @@ Route::middleware(['auth'])->group(function () {
     // 通知一覧の表示
     // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 
-    Route::get('/notifications', function() {
+    Route::get('/notifications', function () {
         return view('notifications.index');
     })->name('notifications.index');
 

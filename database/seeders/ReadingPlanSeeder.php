@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Book;
-use App\Models\User;
-use App\Models\ReadingPlan;
 use App\Enums\ReadingPlanStatus;
-use Illuminate\Support\Carbon;
+use App\Models\Book;
+use App\Models\ReadingPlan;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 
 class ReadingPlanSeeder extends Seeder
 {
@@ -25,7 +25,7 @@ class ReadingPlanSeeder extends Seeder
 
         $testUser = User::where('email', 'yamada@example.com')->first();
 
-        if (!$testUser) {
+        if (! $testUser) {
             $testUser = User::first() ?? User::factory()->create();
         }
 
@@ -78,10 +78,10 @@ class ReadingPlanSeeder extends Seeder
 
         foreach ($patterns as $index => $pattern) {
             ReadingPlan::create([
-                'user_id'      => $testUser->id,
-                'book_id'      => $books[$index]->id,
-                'target_date'  => $pattern['target_date'],
-                'status'       => $pattern['status']->value,
+                'user_id' => $testUser->id,
+                'book_id' => $books[$index]->id,
+                'target_date' => $pattern['target_date'],
+                'status' => $pattern['status']->value,
                 'completed_at' => $pattern['completed_at'],
             ]);
         }

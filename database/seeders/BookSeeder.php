@@ -18,7 +18,7 @@ class BookSeeder extends Seeder
 
         $genres = Genre::all();
 
-        if (!$users) {
+        if (! $users) {
             return;
         }
 
@@ -126,14 +126,14 @@ class BookSeeder extends Seeder
 
         foreach ($bookData as $data) {
             $book = Book::Create([
-                    'user_id' => $users->random()->id,
-                    'title' => $data['title'],
-                    'author' => $data['author'],
-                    'isbn' => $data['isbn'],
-                    'published_date' => $data['published_date'],
-                    'description' => $data['description'],
-                    'image_url' => "https://placehold.co/200x300/e2e8f0/475569?text={$data['number']}",
-                ]
+                'user_id' => $users->random()->id,
+                'title' => $data['title'],
+                'author' => $data['author'],
+                'isbn' => $data['isbn'],
+                'published_date' => $data['published_date'],
+                'description' => $data['description'],
+                'image_url' => "https://placehold.co/200x300/e2e8f0/475569?text={$data['number']}",
+            ]
             );
 
             $genreIds = Genre::whereIn('name', $data['genres'])->pluck('id')->toArray();

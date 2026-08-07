@@ -225,8 +225,8 @@ sail artisan migrate --seed
 | **user_id** | bigint | Foreign Key (users.id), Cascade Delete | 登録ユーザーID |
 | **title** | string | Not Null | 書籍タイトル |
 | **author** | string | Not Null | 著者名 |
-| **isbn** | char(13) | Not Null, Unique | ISBNコード (13桁数字) |
-| **published_date** | date | Not Null | 出版日 |
+| **isbn** | char(13) | Nullable, Unique | ISBNコード (13桁数字) |
+| **published_date** | date | Nullable | 出版日 |
 | **description** | text | Nullable | 書籍の説明・概要 |
 | **image_url** | text | Nullable | 表紙画像のURL |
 | **created_at** | timestamp | Not Null | レコード作成日時 |
@@ -302,6 +302,7 @@ sail artisan migrate --seed
 | **book_id** | bigint | Foreign Key (books.id), Cascade Delete | 対象の書籍ID |
 | **target_date** | date | Not Null | 読了の目標期日 |
 | **status** | string | Not Null (デフォルト: 'unread') | 計画状態 ('unread', 'reading', 'completed') |
+| **completed_at** | date | Nullable | 読了した期日 |
 | **created_at** | timestamp | Not Null | レコード作成日時 |
 | **updated_at** | timestamp | Not Null | レコード更新日時 |
 | **-** | - | Unique Key (`user_id`, `book_id`) | 同一書籍に対する重複計画を防ぐ制約 |

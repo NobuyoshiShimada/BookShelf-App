@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Genre;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 
@@ -22,22 +22,22 @@ class BookController extends Controller
         $genres = Genre::all();
 
         $query = Book::with('genres')
-        ->withAvg('reviews', 'rating')
-        ->withCount('reviews');
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews');
 
         // キーワード検索
         if ($request->filled('keyword')) {
-            $keyword = '%' . $request->input('keyword') . '%';
-            $query->where(function($q) use ($keyword) {
+            $keyword = '%'.$request->input('keyword').'%';
+            $query->where(function ($q) use ($keyword) {
                 $q->where('title', 'like', $keyword)
-                ->orWhere('author', 'like', $keyword);
+                    ->orWhere('author', 'like', $keyword);
             });
         }
 
         // ジャンル絞り込み
         if ($request->filled('genre')) {
             $genreId = $request->input('genre');
-            $query->whereHas('genres', function ($q) use ($genreId){
+            $query->whereHas('genres', function ($q) use ($genreId) {
                 $q->where('genres.id', $genreId);
             });
         }
@@ -55,7 +55,7 @@ class BookController extends Controller
                 $query->orderBy('title', 'asc');
                 break;
             case 'newest':
-                default:
+            default:
                 $query->latest();
                 break;
         }
@@ -181,47 +181,46 @@ class BookController extends Controller
     public function searchIsbn($isbn)
     {
         // 13桁の数字チェック
-        if (!preg_match('/^[0-9]{13}$/', $isbn)) {
+        if (! preg_match('/^[0-9]{13}$/', $isbn)) {
             return response()->json([
-                'error' => 'ISBNは13桁の数字で入力してください。'],400);
-                }
+                'error' => 'ISBNは13桁の数字で入力してください。'], 400);
+        }
 
         // Google Book APIへの問い合わせ
-         try {
+        try {
             $response = Http::withoutVerifying()
                 ->timeout(10)
                 ->withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                 ])
                 ->get('https://www.googleapis.com/books/v1/volumes', [
-                    'q' => 'isbn:' . $isbn,
+                    'q' => 'isbn:'.$isbn,
                     'key' => env('GOOGLE_BOOKS_API_KEY'),
                 ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Googleサーバーへの接続に失敗しました: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Googleサーバーへの接続に失敗しました: '.$e->getMessage()], 500);
         }
 
         if ($response->failed()) {
-            return response()->json(['error' => 'Google APIからエラーが返されました (ステータスコード: ' . $response->status() . ')'], 500);
+            return response()->json(['error' => 'Google APIからエラーが返されました (ステータスコード: '.$response->status().')'], 500);
         }
 
         $data = $response->json();
 
         if ($response->failed()) {
             return response()->json([
-                'error' => '外部APIとの通信に失敗しました。'
+                'error' => '外部APIとの通信に失敗しました。',
             ], 500);
         }
 
         $data = $response->json();
 
         // 該当する書籍が見つからない時
-        if (!isset($data['items'][0]['volumeInfo'])) {
+        if (! isset($data['items'][0]['volumeInfo'])) {
             return response()->json(['error' => '該当する書籍情報が見つかりませんでした。'], 404);
         }
 
         $volumeInfo = $data['items'][0]['volumeInfo'];
-
 
         // 出版日
         $publishedDate = $volumeInfo['publishedDate'] ?? null;
@@ -247,7 +246,6 @@ class BookController extends Controller
             'description' => $volumeInfo['description'] ?? '',
             'image_url' => $imageUrl,
         ]);
-
 
     }
 }

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Book;
-use App\Models\User;
 use App\Models\Review;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class ReviewSeeder extends Seeder
@@ -33,7 +33,7 @@ class ReviewSeeder extends Seeder
             $shuffledUsers = $users->shuffle();
 
             for ($i = 0; $i < $reviewCount; $i++) {
-                if (!$shuffledUsers->has($i)) {
+                if (! $shuffledUsers->has($i)) {
                     break;
                 }
 
@@ -41,14 +41,13 @@ class ReviewSeeder extends Seeder
 
                 $rating = rand(1, 5);
 
-                Review::create ([
+                Review::create([
                     'user_id' => $reviewer->id,
                     'book_id' => $book->id,
                     'rating' => $rating,
                     'comment' => $templates[$rating],
                 ]);
             }
-
 
         }
 
