@@ -35,12 +35,12 @@ class ReviewRequest extends FormRequest
     {
         return [
             'rating.required' => '評価は必須です。',
-            'rating.integer' => '評価は正しい数値で選択してください。',
-            'rating.min' => '評価は星1以上を選択してください。',
-            'rating.max' => '評価は星5以下で選択してください。',
+            'rating.integer' => '評価は整数で入力してください。',
+            'rating.min' => '評価は1〜5の整数で入力してください。',
+            'rating.max' => '評価は1〜5の整数で入力してください。',
             'comment.required' => 'コメントは必須です。',
             'comment.string' => 'コメントは文字列で入力してください。',
-            'comment.max' => 'コメントは1000文字以下で入力してください。',
+            'comment.max' => 'コメントは1000文字以内で入力してください。',
         ];
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ReadingPlan;
 use App\Enums\ReadingPlanStatus;
 use App\Http\Requests\StoreReadingPlanRequest;
 use App\Http\Requests\UpdateReadingPlanRequest;
+use App\Http\Requests\updateReadingPlanRequest as RequestsUpdateReadingPlanRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
