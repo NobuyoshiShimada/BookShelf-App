@@ -57,5 +57,4 @@ class Book extends Model
     {
         return $this->hasMany(ReadingPlan::class);
     }
-
 }

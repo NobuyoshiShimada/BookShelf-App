@@ -2,12 +2,14 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use App\Models\Book;
+use App\Models\ReadingPlan;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ReadingPlan>
+ * @extends Factory<ReadingPlan>
  */
 class ReadingPlanFactory extends Factory
 {
@@ -21,7 +23,7 @@ class ReadingPlanFactory extends Factory
         return [
             'user_id' => User::factory(),
             'book_id' => Book::factory(),
-            'target_date' => fake()->dateTimeBetween('now', '+3 months')->format('Y-m-d'),
+            'target_date' => Carbon::now()->addMonths(2),
             'status' => fake()->randomElement(['unread', 'reading', 'completed']),
         ];
     }

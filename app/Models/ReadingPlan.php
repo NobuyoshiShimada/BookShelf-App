@@ -20,10 +20,10 @@ class ReadingPlan extends Model
 
     // カラムとEnumオブジェクトのキャストの紐付ける
     protected $casts = [
-            'status' => ReadingPlanStatus::class,
-            'target_date' => 'date',
-            'completed_at' => 'date',
-        ];
+        'status' => ReadingPlanStatus::class,
+        'target_date' => 'date',
+        'completed_at' => 'date',
+    ];
 
     // 計画を立てたユーザー
     public function user()

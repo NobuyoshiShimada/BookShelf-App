@@ -2,16 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use App\Models\Genre;
-use App\Models\Review;
-use App\Models\ReadingPlan;
 use App\Enums\ReadingPlanStatus;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\ReadingPlan;
+use App\Models\Review;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
 
 class ReadingReportController extends Controller
 {
@@ -25,20 +20,20 @@ class ReadingReportController extends Controller
 
         // 読了件数
         $booksRead = ReadingPlan::where('user_id', $userId)
-        ->where('status', ReadingPlanStatus::Completed->value)
-        ->count();
+            ->where('status', ReadingPlanStatus::Completed->value)
+            ->count();
 
         // 平均評価
         $averageRating = Review::where('user_id', $userId)->avg('rating');
-        $averageRating = $averageRating ? (float)$averageRating:0;
+        $averageRating = $averageRating ? (float) $averageRating : 0;
 
         // 評価分布
         $ratingDistribution = collect([0 => 0, 1 => 0, 2 => 0, 3 => 0, 4 => 0]);
 
         $reviewCounts = Review::where('user_id', $userId)
-        ->select('rating', DB::raw('count(*) as total'))
-        ->groupBy('rating')
-        ->get();
+            ->select('rating', DB::raw('count(*) as total'))
+            ->groupBy('rating')
+            ->get();
 
         foreach ($reviewCounts as $rc) {
             if ($rc->rating >= 1 && $rc->rating <= 5) {
@@ -48,49 +43,49 @@ class ReadingReportController extends Controller
 
         // 高評価書籍TOP5
         $topRatedBooks = Review::with('book')
-        ->where('user_id', $userId)
-        ->where('rating', '>=', 4)
-        ->orderByDesc('rating')
-        ->orderByDesc('created_at')
-        ->take(5)
-        ->get()
-        ->map(function ($review) {
-            return [
-                'id' => $review->book->id ?? null,
-                'title' => $review->book->title ?? '不明な書籍',
-                'author' => $review->book->author ?? '不明な著者',
-                'rating' => $review->rating,
-            ];
-        })
-        ->filter(fn($item) => !is_null($item['id']))
-        ->values()
-        ->toArray();
+            ->where('user_id', $userId)
+            ->where('rating', '>=', 4)
+            ->orderByDesc('rating')
+            ->orderByDesc('created_at')
+            ->take(5)
+            ->get()
+            ->map(function ($review) {
+                return [
+                    'id' => $review->book->id ?? null,
+                    'title' => $review->book->title ?? '不明な書籍',
+                    'author' => $review->book->author ?? '不明な著者',
+                    'rating' => $review->rating,
+                ];
+            })
+            ->filter(fn ($item) => ! is_null($item['id']))
+            ->values()
+            ->toArray();
 
         // ジャンル別評価傾向TOP5
         $genreRatings = DB::table('reviews')
-        ->join('book_genre', 'reviews.book_id', '=', 'book_genre.book_id')
-        ->join('genres', 'book_genre.genre_id', '=', 'genres.id')
-        ->where('reviews.user_id', $userId)
-        ->select(
-            'genres.id',
-            'genres.name',
-            DB::raw('count(reviews.id) as count'),
-            DB::raw('avg(reviews.rating) as average_rating'),
-        )
-        ->groupBy('genres.id', 'genres.name')
-        ->orderByDesc('average_rating')
-        ->orderByDesc('count')
-        ->take(5)
-        ->get()
-        ->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'name' => $item->name,
-                'count' => $item->count,
-                'average_rating' => (float)$item->average_rating,
-            ];
-        })
-        ->toArray();
+            ->join('book_genre', 'reviews.book_id', '=', 'book_genre.book_id')
+            ->join('genres', 'book_genre.genre_id', '=', 'genres.id')
+            ->where('reviews.user_id', $userId)
+            ->select(
+                'genres.id',
+                'genres.name',
+                DB::raw('count(reviews.id) as count'),
+                DB::raw('avg(reviews.rating) as average_rating'),
+            )
+            ->groupBy('genres.id', 'genres.name')
+            ->orderByDesc('average_rating')
+            ->orderByDesc('count')
+            ->take(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'count' => $item->count,
+                    'average_rating' => (float) $item->average_rating,
+                ];
+            })
+            ->toArray();
 
         // ビューへ渡す連想配列
         $stats = [
