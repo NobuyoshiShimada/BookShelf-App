@@ -60,7 +60,8 @@ class BookController extends Controller
                 break;
         }
 
-        $books = $query->paginate(10)->withQueryString();
+        $books = $query->paginate(10);
+        $books->appends($request->query());
 
         return view('books.index', compact('books', 'genres'));
     }
