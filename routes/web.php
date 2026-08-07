@@ -5,6 +5,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\ReadingPlanController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReadingReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -84,13 +85,8 @@ Route::middleware(['auth'])->group(function () {
     // 読書計画の読了処理
     Route::post('/reading-plans/{plan}/complete', [ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
 
-
-
     // マイリポート
-    Route::get('/reports', function () {
-        return view('reports.index');
-    })->name('reports.index');
-    // Route::get('/reports', [ReadingReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports', [ReadingReportController::class, 'index'])->name('reports.index');
 
     // 通知一覧の表示
     // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

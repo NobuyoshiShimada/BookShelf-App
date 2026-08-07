@@ -23,18 +23,16 @@ class UpdateBookRequest extends FormRequest
      */
     public function rules(): array
     {
-        $book = $this->route('book');
-        $bookId = is_object($book) ? $book->id : null;
 
         return [
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|size:13|regex:/^[0-9]+$/|unique:books,isbn,'.$bookId,
-            'published_date' => 'required|date|before_or_equal:today',
-            'description' => 'nullable',
-            'image_url' => 'nullable|string|url|max:255',
+            'isbn' => 'nullable|string|size:13|unique:books,isbn,' . ($this->route('book')?->id ?? 'NULL'),
+            'published_date' => 'nullable|date',
+            'description' => 'nullable|string',
+            'image_url' => 'nullable|url|max:255',
             'genres' => 'required|array|min:1',
-            'genres.*' => 'required|integer|exists:genres,id',
+            'genres.*' => 'exists:genres,id',
         ];
     }
 
@@ -42,29 +40,29 @@ class UpdateBookRequest extends FormRequest
     public function messages()
     {
         return [
-            'title.required' => '書籍のタイトルは必須項目です。',
+            'title.required' => 'タイトルは必須です。',
             'title.string' => 'タイトルは文字列で入力してください。',
             'title.max' => 'タイトルは255文字以内で入力してください。',
 
-            'author.required' => '著者名は必須項目です。',
+            'author.required' => '著者名は必須です。',
             'author.string' => '著者名は文字列で入力してください。',
             'author.max' => '著者名は255文字以内で入力してください。',
 
-            'isbn.required' => 'ISBNコードは必須項目です。',
-            'isbn.size' => 'ISBNコードはハイフンなしの13文字で入力してください。',
-            'isbn.regex' => 'ISBNコードはハイフンなしの「数字のみ」で入力してください。',
-            'isbn.unique' => 'このISBNコードの書籍は、すでに登録されています。',
+            'isbn.size' => 'ISBNは13桁で入力してください。',
+            'isbn.string' => 'ISBNは文字列で入力してください。',
+            'isbn.unique' => 'そのISBNは既に使用されています。',
 
-            'published_date.required' => '出版日は必須項目です。',
-            'published_date.date' => '正しい日付の形式で入力してください。',
-            'published_date.before_or_equal' => '出版日には、今日以前の過去の日付を入力してください。',
+            'published_date.date' => '出版日は有効な日付形式で入力してください。',
 
-            'image_url.url' => '画像URLには「http://」または「https://」から始まる正しいURLを入力してください。',
+            'description.string' => '説明は文字列で入力してください。',
+
+            'image_url.url' => '画像URLは有効なURL形式で入力してください。',
             'image_url.max' => '画像URLは255文字以内で入力してください。',
 
-            'genres.required' => 'ジャンルは最低でも1つ以上選択してください。',
-            'genres.min' => 'ジャンルは最低でも1つ以上選択してください。',
-            'genres.*' => '選択されたジャンルの中に、システムに存在しない不正なジャンルが含まれています。',
+            'genres.required' => 'ジャンルは1つ以上選択してください。',
+            'genres.array' => 'ジャンルは配列で入力してください。',
+            'genres.min' => 'ジャンルは1つ以上選択してください。',
+            'genres.*' => '選択されたジャンルは存在しません。',
         ];
     }
 }
