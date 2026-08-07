@@ -30,6 +30,7 @@ class Book extends Model
     }
 
     // この本に投稿されたレビュー(1対多)
+
     public function reviews()
     {
         return $this->hasMany(Review::class);

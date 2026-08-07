@@ -70,15 +70,20 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('genres.destroy');
 
     // 読書計画一覧の表示
-    Route::get('/reading-plants', [ReadingPlanController::class, 'index'])->name('reading-plans.index');
+    Route::get('/reading-plans', [ReadingPlanController::class, 'index'])->name('reading-plans.index');
     // 読書計画新規作成画面の表示
-    Route::get('/reading-plants/create', [ReadingPlanController::class, 'create'])->name('reading-plants.create');
+    Route::get('/reading-plans/create', [ReadingPlanController::class, 'create'])->name('reading-plans.create');
     // 読書計画の新規登録処理
-    Route::post('/reading-plants', [ReadingPlanController::class, 'store'])->name('reading-plans.store');
+    Route::post('/reading-plans', [ReadingPlanController::class, 'store'])->name('reading-plans.store');
     // 読書計画の編集画面の表示
     Route::get('/reading-plans/{plan}/edit', [ReadingPlanController::class, 'edit'])->name('reading-plans.edit');
     // 読書計画の更新処理
-    Route::post('/reading-plans/{plan}', [ReadingPlanController::class, 'update'])->name('reading-plans.update');
+    Route::put('/reading-plans/{plan}', [ReadingPlanController::class, 'update'])->name('reading-plans.update');
+    // 読書計画の削除処理
+    Route::delete('/reading-plans/{plan}', [ReadingPlanController::class, 'destroy'])->name('reading-plans.destroy');
+    // 読書計画の読了処理
+    Route::post('/reading-plans/{plan}/complete', [ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
+
 
 
     // マイリポート
