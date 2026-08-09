@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReadingPlanController;
 use App\Http\Controllers\ReadingReportController;
 use App\Http\Controllers\ReviewController;
@@ -88,13 +89,9 @@ Route::middleware(['auth'])->group(function () {
     // マイリポート
     Route::get('/reports', [ReadingReportController::class, 'index'])->name('reports.index');
 
-    // 通知一覧の表示
-    // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-
-    Route::get('/notifications', function () {
-        return view('notifications.index');
-    })->name('notifications.index');
-
+    // 通知一覧
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
 });
 
 // 公開ページ
