@@ -11,14 +11,20 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        $notifications = Auth::user()->notifications;
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        $notifications = $user->notifications;
 
         return view('notifications.index', compact('notifications'));
     }
 
     public function read($id)
     {
-        $notifications = Auth::user()->unreadNotifications()->findOrFail($id);
+         /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $notifications = $user->unreadNotifications()->findOrFail($id);
 
         $notifications->markAsRead();
 

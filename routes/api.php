@@ -15,5 +15,16 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function () {
-    Route::apiResource('books', BookController::class);
+    // 認証無し
+    Route::get('/books', [BookController::class, 'index']);
+    Route::get('/books/{book}', [BookController::class, 'show']);
+    // sanctum認証
+    Route::middleware('auth:sanctum')->group(function () {
+        // 書籍関係の書き込み系
+        Route::post('/books', [BookController::class, 'store']);
+        Route::put('/books/{book}', [BookController::class, 'update']);
+        Route::delete('/books/{book}', [BookController::class, 'destroy']);
+    });
 });
+
+
