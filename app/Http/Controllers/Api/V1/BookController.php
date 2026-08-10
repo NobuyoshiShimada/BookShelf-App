@@ -8,10 +8,12 @@ use App\Http\Requests\Api\V1\UpdateBookRequest;
 use App\Http\Resources\Api\V1\BookResource;
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use illuminate\Auth\Access\AuthorizationException;
 
 class BookController extends Controller
 {
-    private const GUEST_USER_ID = 999;
+    // private const GUEST_USER_ID = 999;
 
     public function index(Request $request)
     {
@@ -53,7 +55,7 @@ class BookController extends Controller
 
         $book = Book::create([
             // 認証不要用の固定ユーザーID割り当て
-            'user_id' => self::GUEST_USER_ID,
+            'user_id' => Auth::id(),
             'title' => $validated['title'],
             'author' => $validated['author'],
             'isbn' => $validated['isbn'],
@@ -93,8 +95,12 @@ class BookController extends Controller
     // 書籍更新
     public function update(UpdateBookRequest $request, Book $book)
     {
-        if ($book->user_id !== self::GUEST_USER_ID) {
-            return response()->json(['message' => 'この書籍情報を更新する権限がありません。'], 403);
+        try {
+            $this->authorize('update', $book);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'message' => '自分が登録した書籍情報のみ更新できます。'
+            ], 403);
         }
 
         $validated = $request->validated();
@@ -121,8 +127,12 @@ class BookController extends Controller
     // 書籍削除
     public function destroy(Book $book)
     {
-        if ($book->user_id !== self::GUEST_USER_ID) {
-            return response()->json(['message' => 'この書籍を削除する権限がありません。'], 403);
+        try {
+            $this->authorize('delete', $book);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'message' => '自分が登録した書籍のみ削除できます。'
+            ], 403);
         }
 
         $book->genres()->sync([]);
