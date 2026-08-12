@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ReadingPlan;
 use App\Enums\ReadingPlanStatus;
+use App\Models\ReadingPlan;
 use App\Notifications\ReadingPlanReminder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -33,14 +33,14 @@ class SendReadingPlanReminders extends Command
         $today = Carbon::today();
 
         $plans = ReadingPlan::with(['user', 'book'])
-        ->where('status', '!=', ReadingPlanStatus::Completed->value)
-        ->get();
+            ->where('status', '!=', ReadingPlanStatus::Completed->value)
+            ->get();
 
         $notificationCount = 0;
         $statusUpdateCount = 0;
 
         foreach ($plans as $plan) {
-            if (!$plan->user || !$plan->book) {
+            if (! $plan->user || ! $plan->book) {
                 continue;
             }
 
@@ -49,9 +49,9 @@ class SendReadingPlanReminders extends Command
 
             // 自動状態遷移
 
-            if ($daysDifference <0 && $plan->status->value !== ReadingPlanStatus::Overdue->value) {
+            if ($daysDifference < 0 && $plan->status->value !== ReadingPlanStatus::Overdue->value) {
                 $plan->update([
-                    'status' => ReadingPlanStatus::Overdue->value
+                    'status' => ReadingPlanStatus::Overdue->value,
                 ]);
 
                 $statusUpdateCount++;
@@ -66,13 +66,11 @@ class SendReadingPlanReminders extends Command
                 $timing = 'three_days_before';
                 $title = '読書期日が近づいています。';
                 $body = '「{$plan->book->title}」の読書期日まであと3日です。';
-            }
-            elseif ($daysDifference === 0) {
+            } elseif ($daysDifference === 0) {
                 $timing = 'on_due_date';
                 $title = '読書計画の期日当日です。';
                 $body = '「{$plan->book->title}」の読書期日当日です。';
-            }
-            elseif ($daysDifference <0) {
+            } elseif ($daysDifference < 0) {
                 $timing = 'three_days_after';
                 $title = '読書期日が3日過ぎています。';
                 $body = '「{$plan->book->title}」の読書期日から3日が経過しました。';
@@ -84,7 +82,7 @@ class SendReadingPlanReminders extends Command
             }
         }
 
-        $this->info("処理が完了しました。");
+        $this->info('処理が完了しました。');
         $this->info("・自動配信された通知: {$notificationCount} 件");
         $this->info("・期限超過に遷移した計画: {$statusUpdateCount} 件");
 

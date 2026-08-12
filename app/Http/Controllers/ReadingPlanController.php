@@ -113,10 +113,6 @@ class ReadingPlanController extends Controller
 
         $this->authorize('delete', $readingPlan);
 
-        if ($readingPlan->user_id !== Auth::id()) {
-            abort(403);
-        }
-
         $readingPlan->delete();
 
         return redirect()->route('reading-plans.index')

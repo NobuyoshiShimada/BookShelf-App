@@ -7,9 +7,9 @@ use App\Http\Requests\Api\V1\StoreBookRequest;
 use App\Http\Requests\Api\V1\UpdateBookRequest;
 use App\Http\Resources\Api\V1\BookResource;
 use App\Models\Book;
+use illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use illuminate\Auth\Access\AuthorizationException;
 
 class BookController extends Controller
 {
@@ -99,7 +99,7 @@ class BookController extends Controller
             $this->authorize('update', $book);
         } catch (AuthorizationException $e) {
             return response()->json([
-                'message' => '自分が登録した書籍情報のみ更新できます。'
+                'message' => '自分が登録した書籍情報のみ更新できます。',
             ], 403);
         }
 
@@ -131,7 +131,7 @@ class BookController extends Controller
             $this->authorize('delete', $book);
         } catch (AuthorizationException $e) {
             return response()->json([
-                'message' => '自分が登録した書籍のみ削除できます。'
+                'message' => '自分が登録した書籍のみ削除できます。',
             ], 403);
         }
 

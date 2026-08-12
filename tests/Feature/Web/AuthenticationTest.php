@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\web;
+namespace Tests\Feature\Web;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -80,7 +80,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         // リダイレクト先をテスト
-        $response->assertRedirect();
+        $response->assertRedirect('/books');
     }
 
     public function test_ログアウトできる(): void
