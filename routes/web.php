@@ -31,7 +31,7 @@ Route::middleware(['auth'])->group(function () {
     // 新規書籍登録
     Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
     // ISBN検索
-    Route::get('/books/isbn/{isbn}', [BookController::class, 'searchIsbn'])->name('books.isbn.search');
+    Route::get('/books/isbn/{isbn}', [BookController::class, 'searchIsbn'])->name('books.search-isbn');
     // 新規書籍登録処理
     Route::post('/books', [BookController::class, 'store'])->name('books.store');
     // 書籍編集

@@ -15,7 +15,7 @@ enum ReadingPlanStatus: string
             self::Unread => '未読',
             self::Reading => '読書中',
             self::Completed => '読了',
-            self::Overdue =>'期日超過',
+            self::Overdue => '期日超過',
         };
     }
 

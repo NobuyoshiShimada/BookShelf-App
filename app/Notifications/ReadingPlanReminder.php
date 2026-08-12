@@ -11,17 +11,20 @@ class ReadingPlanReminder extends Notification
     use Queueable;
 
     protected $readingPlan;
+
     protected $timing;
+
     protected $title;
+
     protected $body;
 
-     /**
+    /**
      * 新しい通知インスタンスの作成
      *
-     * @param ReadingPlan $readingPlan 読書計画モデル
-     * @param string $timing 'three_days_before' | 'on_due_date' | 'three_days_after' など
-     * @param string $title 通知のタイトル
-     * @param string $body 通知の本文
+     * @param  ReadingPlan  $readingPlan  読書計画モデル
+     * @param  string  $timing  'three_days_before' | 'on_due_date' | 'three_days_after' など
+     * @param  string  $title  通知のタイトル
+     * @param  string  $body  通知の本文
      */
 
     /**

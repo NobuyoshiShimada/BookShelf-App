@@ -195,7 +195,7 @@ class BookController extends Controller
                 ])
                 ->get('https://www.googleapis.com/books/v1/volumes', [
                     'q' => 'isbn:'.$isbn,
-                    'key' => env('GOOGLE_BOOKS_API_KEY'),
+                    // 'key' => env('GOOGLE_BOOKS_API_KEY'),
                 ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Googleサーバーへの接続に失敗しました: '.$e->getMessage()], 500);
@@ -203,14 +203,6 @@ class BookController extends Controller
 
         if ($response->failed()) {
             return response()->json(['error' => 'Google APIからエラーが返されました (ステータスコード: '.$response->status().')'], 500);
-        }
-
-        $data = $response->json();
-
-        if ($response->failed()) {
-            return response()->json([
-                'error' => '外部APIとの通信に失敗しました。',
-            ], 500);
         }
 
         $data = $response->json();
