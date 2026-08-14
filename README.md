@@ -20,7 +20,7 @@ cd bookshelf-app
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer require laravel/sail --dev
 ```
-4. sailの設ファイルを生成する（MySQLを選択）
+4. sailの設定ファイルを生成する（MySQLを選択）
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest php artisan sail:install --with=mysql`
 ```
@@ -132,7 +132,7 @@ phpmyadmin:
 
 ### 1. API キーの取得手順
 
-1. **Google Cloud Console**（[https://google.com](https://google.com)）にGoogleアカウントでログインします。
+1. **Google Cloud Console**（[https://google.com](https://cloud.google.com/cloud-console?%7B_dsmrktparam%7D%7Bignore%7D=&%7B_dsmrktparam%7D=&utm_source=google&utm_medium=cpc&utm_campaign=Cloud-SS-DR-GCP-1713664-GCP-DR-APAC-JP-ja-Google-BKWS-MIX-GenericCloud&utm_content=c-Hybrid+%7C+BKWS+-+BRO+%7C+Txt+-+Generic+Cloud-Console-Cloud+Console-JP_ja-296393718382&utm_term=google%20cloud%20console&gclsrc=aw.ds&gad_source=1&gad_campaignid=12757824394&gclid=CjwKCAjws_DTBhB_EiwAXZknGaw6TTD2T9lExCe1V2mTPCsh7YHwIOiMFCstWhUSAQGk393D-FeN2hoCVqIQAvD_BwE)）にGoogleアカウントでログインします。
 2. 画面上部のプロジェクト選択メニューから **「新しいプロジェクト」** を作成します。
 3. サイドメニューの「APIとサービス」 > 「ライブラリ」を開き、検索窓に **「Books API」** と入力して選択し、**「有効にする」** をクリックします。
 4. 「APIとサービス」 > 「認証情報」画面を開き、画面上部の **「+ 認証情報を作成」** から **「APIキー」** を選択します。
@@ -145,6 +145,12 @@ phpmyadmin:
 ```env
 # Google Books API 設定
 GOOGLE_BOOKS_API_KEY=YourActualAPIKeyHere...
+```
+
+- 環境変数をコンテナ（Laravel Sail）環境に確実に同期・反映させるため、キーを入力した後はターミナルで必ず以下のキャッシュリフレッシュコマンドを実行してください。
+```bash
+sail artisan config:clear
+sail artisan optimize:clear
 ```
 
 > 💡 **注意**: `.env` ファイルはGitの管理対象外（`.gitignore` に登録済み）となっているため、取得した秘密のAPIキーが外部（GitHub等）に公開される心配はありません。
@@ -181,17 +187,19 @@ sail artisan migrate --seed
 
 ---
 ## 使用技術(実行環境)
-- macOS Swquoia 15.6
-- PHP 8.5.7
-- Laravel 10.50.2
-- DB: MySQL 8.4.11
-- フロントエンド: Vite, Tailwind CSS ^3.4.0, @tailwindcss/forms
-- 開発ツール: Docker, Laravel Sail, phpMyAdmin,Postman
+- **OS** : macOS Sequoia 15.6
+- **Language** : PHP 8.5.7
+- **Framework** : Laravel 10.50.2
+- **Database** : MySQL 8.4.11
+- **Frontend** : Vite, Tailwind CSS ^3.4.0, @tailwindcss/forms
+- **Tools** : Docker, Laravel Sail, phpMyAdmin,Postman
 
 ---
 ## URL
-- 開発環境：http://localhost/books
-- phpMyAdmin:：http://localhost:8080/
+- **アプリケーションTOP**: [http://localhost/books](http://localhost/books)
+- **データベース管理（phpMyAdmin）**: [http://localhost:8080/](http://localhost:8080/)
+- **マイ読書レポート**: [http://localhost/reading-report](http://localhost/reading-report)
+- **通知一覧**: [http://localhost/notifications](http://localhost/notifications)
 
 ---
 ## 作成者
@@ -301,7 +309,7 @@ sail artisan migrate --seed
 | **user_id** | bigint | Foreign Key (users.id), Cascade Delete | 計画を立てたユーザーID |
 | **book_id** | bigint | Foreign Key (books.id), Cascade Delete | 対象の書籍ID |
 | **target_date** | date | Not Null | 読了の目標期日 |
-| **status** | string | Not Null (デフォルト: 'unread') | 計画状態 ('unread', 'reading', 'completed') |
+| **status** | string | Not Null (デフォルト: 'unread') | 計画状態 ('unread', 'reading', 'completed', 'overdue') |
 | **completed_at** | date | Nullable | 読了した期日 |
 | **created_at** | timestamp | Not Null | レコード作成日時 |
 | **updated_at** | timestamp | Not Null | レコード更新日時 |
@@ -413,6 +421,7 @@ erDiagram
         bigint user_id FK "users.id, UK(book_id, user_id)"
         date target_date
         string status
+        date completed_at
         timestamp created_at
         timestamp updated_at
     }
@@ -432,34 +441,46 @@ erDiagram
 ---
 ## 公開APIエンドポイント一覧
 
-すべてのAPIルートは認証不要でアクセス可能です。ベースURL（例: `http://127.0.0`）に続けて以下のパスをリクエストしてください。
+書き込み系エンドポイント（POST/PUT/DELETE）には **Laravel Sanctum による Bearer トークン認証**、および Policy クラスによる **所有者限定の認可ガード** が適用されています。
 
 ### 書籍管理API (v1/books)
 
-| メソッド | パス | 機能概要 | クエリパラメータ / リクエストボディ |
-| :--- | :--- | :--- | :--- |
-| **GET** | `/v1/books` | 書籍一覧の取得 (10件ペジネーション) | `keyword` (検索ワード), `genre_id` (ジャンル絞り込み), `per_page` (最大100) |
-| **POST** | `/v1/books` | 新しい書籍の登録 (登録時のuser_idは固定値999) | `title`, `author`, `isbn` (13桁数字), `published_date`, `description`, `image_url`, `genres` (配列) |
-| **GET** | `/v1/books/{book}` | 特定の書籍の検索・詳細情報取得 | パスパラメータに書籍の `id` を指定 |
-| **PUT** | `/v1/books/{book}` | 既存の書籍情報の更新 | `title`, `author`, `isbn`, `published_date`, `description`, `image_url`, `genres` (配列) |
-| **DELETE** | `/v1/books/{book}` | 書籍の削除 (関連レビュー、中間テーブルも連動削除) | パスパラメータに書籍の `id` を指定 |
+| メソッド | パス | 認証 | 機能概要 | クエリパラメータ / リクエストボディ |
+| :--- | :--- | :--- | :--- | :--- |
+| **GET** | `/v1/books` | **不要** | 書籍一覧の取得 (検索・10件ページネーション) | `keyword` (部分一致), `genre_id` (ジャンル絞り込み), `per_page` (最大100) |
+| **GET** | `/v1/books/{id}` | **不要** | 特定の書籍の検索・詳細情報取得 | パスパラメータに書籍の `id` を指定 |
+| **POST** | `/v1/books` | **必須** | 新しい書籍の登録 | `title`, `author`, `isbn`, `published_date`, `description`, `image_url`, `genres` (配列) |
+| **PUT** | `/v1/books/{id}` | **必須＋認可** | 登録者本人による書籍情報の更新 | `title`, `author`, `isbn`, `published_date`, `description`, `image_url`, `genres` (配列) |
+| **DELETE** | `/v1/books/{id}` | **必須＋認可** | 登録者本人による書籍の削除 | パスパラメータに書籍の `id` を指定 |
 
 ---
-## テストアカウント
+## 検証用テストアカウント
 
-name:山田 太郎
+データベースの初期化シーディング（`sail artisan migrate:fresh --seed`）を実行すると、以下の山田太郎のアカウントに「期日3日前」「期日当日」「期限超過」の全パターンの読書計画・リマインダー通知、およびマイ読書レポート用のデータが集約して生成されます。
 
-email:yamada@example.com
+### 1. 山田 太郎（全機能・リマインダー検証用メインアカウント）
+* **Email**: `yamada@example.com`
+* **Password**: `password`
 
-password:password
+### 2. 鈴木 花子（APIの403認可エラー検証用別アカウント）
+* **Email**: `suzuki@example.com`
+* **Password**: `password`
+ ---
+## 読書計画テストデータ（ReadingPlanSeeder）のシナリオ仕様
 
----
+`sail artisan migrate:fresh --seed` を実行すると、日次バッチ（リマインダー通知 ＆ 自動状態遷移）の挙動をローカル環境で即座に検証できるよう、山田太郎（`yamada@example.com`）に対して以下の **7パターンの日付タイムラインシナリオ** が自動生成されます。
 
-name:鈴木 花子
+| シナリオ名 | 初期ステータス | 期日 (`target_date`) | バッチ実行後（`schedule:work` 等）の挙動 |
+| :--- | :---: | :--- | :--- |
+| **① 6日前（超過・進行中）** | `reading` | 本日の 6 日前 | ステータスが自動的に **`overdue`（期限超過）** へ遷移。 |
+| **② 3日前（超過・未読）** | `unread` | 本日の 3 日前 | ステータスが **`overdue`** へ遷移、かつ **「期日超過通知」** が配信。 |
+| **③ 当日（本日が期日）** | `reading` | **本日当日** | ステータスは維持、かつ **「本日締切通知」** が配信。 |
+| **④ 3日後（間近の期日）** | `unread` | 本日の 3 日後 | ステータスは維持、かつ **「期日3日前通知」** が配信。 |
+| **⑤ 6日後（余裕のある期日）**| `reading` | 本日の 6 日後 | リマインダー対象外のため、通知・遷移ともに発生せずスキップ。 |
+| **⑥ 読了（過去に読了済）** | `completed` | 本日の 2 日前 | すでに完了しているため、バッチ処理から安全に除外（スキップ）。 |
+| **⑦ 完了済み想定（未来の計画）**| `completed` | 本日の 10 日後 | すでに完了しているため、バッチ処理から安全に除外（スキップ）。 |
 
-email:suzuki@example.com
-
-password:password
+> シード直後は①〜④のデータが `unread`/`reading` でインサートされます。ターミナルで `sail artisan app:send-reading-plan-reminders` を叩くことで、①と②がパッと赤色の「期限超過」バッジに切り替わり、通知一覧（`/notifications`）に3件のリマインダーが溜まる最高のシミュレーション環境が整います.
 
 ---
 ## テストの実行方法（PHPUnit）
@@ -487,7 +508,7 @@ password:password
   # 機能のテスト
   sail artisan test tests/Feature/Web
 
-    # 各機能のテスト
+  # 各機能のテスト
   sail artisan test tests/Feature/Web/ExampleTest.php
 
   # 公開API機能のテスト
@@ -495,25 +516,67 @@ password:password
   ```
 
 ---
-### 2. カバレッジの計測 ### 
+### 2. カバレッジを出力しない時
 ---
-1. .env ファイルを開き、下記の一行を加えてください。
+通常の開発や、単にテストが成功（`PASS`）するかどうかを確認したい時は、Xdebugを無効化して実行します。裏側の監視処理が走らないため、**テストが一瞬（数秒）で終わる最も快適な開発モード**です。
+
+1. `.env` ファイルで `SAIL_XDEBUG_MODE` を空（または `off`）にします。
+```env
+SAIL_XDEBUG_MODE=off
+```
+2. 設定を反映するため、コンテナを再起動します（※設定変更時のみ必須）。
 ```bash
+sail down && sail up -d
+```
+3. テストを実行します。
+```bash
+# 全件一括実行
+sail artisan test
+
+# 特定のファイルをピンポイント実行（例：書籍検索・ソート）
+sail artisan test tests/Feature/Web/AdvancedBookSearchSortTest.php
+```
+
+---
+### 2. カバレッジを出力する時（計測モード）
+---
+機能追加やリファクタリングが一段落し、**「テストがコードの何％を網羅しているか」を測定・出力したい時**のみ、Xdebugを有効化します。
+
+1. `.env` ファイルを開き、以下の通り設定します。
+```env
 SAIL_XDEBUG_MODE=coverage
 ```
-
-2. この設定は起動時に読み込まれるため、いったんコンテナを再起動します。
+2. 設定を読み込ませるため、コンテナを再起動します。
 ```bash
-sail down
-sail up -d
+sail down && sail up -d
 ```
-
-3. カバレッジテストを実行
+3. カバレッジテストを実行します。
 ```bash
+# 最適化キャッシュをクリアした上で実行
+sail artisan optimize:clear
 sail artisan test --coverage
 ```
-> --min=60 を付けると、全体のカバレッジが 60% に満たない場合にコマンドが失敗 します。下限を自動で守りたいときに使います。
-`sail artisan test --coverage --min=60`
+> 💡 **下限ガード（`--min=80`）の活用**
+> 全体のカバレッジが目標の **80%** に満たない場合に自動的にテストコマンドを失敗（FAIL）させ、コード品質の低下を防ぐことができます。
+> `sail artisan test --coverage --min=80`
 
-- `**Xdebug の coverage モードはテストの実行を遅くします。ふだんの開発では SAIL_XDEBUG_MODE を空に戻し（または off にし）、カバレッジを測るときだけ有効にすると快適です。設定を変えたら、その都度コンテナの再起動が必要です。**`
+---
+## 3. 品質レポート（HTML）の出力先と確認方法
+---
+カバレッジテスト（計測モード）を実行すると、どのファイルのどの行がテストを通過したかをブラウザで視覚的に確認できる **HTML形式のグラフィカルな品質レポート** が自動生成されます。
 
+* **HTMLレポートの生成コマンド:**
+  ```bash
+  # テストを実行し、コンテナ内の特定のディレクトリへHTMLレポートを出力します
+  sail artisan test --coverage-html html-report
+  ```
+
+* **品質レポートの出力先（ファイルパス）:**
+  プロジェクトルート直下に生成される以下のフォルダ内の **`index.html`** です。
+  ```text
+  📁 html-report/index.html
+  ```
+
+* **確認方法:**
+  Finder（Mac）やエクスプローラーから、ご自身のPCのローカルにある `html-report/index.html` をダブルクリックしてブラウザ（ChromeやSafari）で開いてください。
+  システム全体のコード網羅率が1目でわかり、緑（テスト通過）や赤（未通過の行）に色分けされた詳細な品質レポートを閲覧できます。

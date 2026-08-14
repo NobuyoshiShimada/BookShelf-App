@@ -4,12 +4,13 @@ erDiagram
     User ||--o{ Review : "投稿する (reviews)"
     User ||--o{ Favorite : "お気に入りする (favorites)"
     User ||--o{ ReviewLike : "いいねする (review_likes)"
-    User ||--o{ ReadingPlan : "読書計画作成する (reading_plans)"
+    User ||--o{ ReadingPlan : "計画する (reading_plans)"
+    User ||--o{ Notification : "通知を受信する (notifications)"
     
     Book ||--o{ Review : "レビューを持つ (reviews)"
     Book ||--o{ BookGenre : "ジャンルを持つ (book_genre)"
     Book ||--o{ Favorite : "お気に入りされる (favorites)"
-    Book ||--o{ ReadingPlan : "読書計画の本 (reading_plans)"
+    Book ||--o{ ReadingPlan : "計画される (reading_plans)"
 
     
     Genre ||--o{ BookGenre : "本に割り当てられる (book_genre)"
@@ -80,14 +81,25 @@ erDiagram
         timestamp updated_at
     }
 
-        ReadingPlan {
+    ReadingPlan {
         bigint id PK
         bigint book_id FK "books.id, UK(book_id, user_id)"
         bigint user_id FK "users.id, UK(book_id, user_id)"
         date target_date
-        string status "default(unread)"
+        string status
+        date completed_at
         timestamp created_at
         timestamp updated_at
     }
 
+    Notification {
+        uuid id PK
+        string type
+        string notifiable_type
+        bigint notifiable_id FK "users.id (ポリモーフィック)"
+        text data
+        timestamp read_at
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
