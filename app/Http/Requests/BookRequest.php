@@ -10,7 +10,12 @@ use Override;
 class BookRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * リクエストを実行するユーザーのログイン認証権限チェック
+     *
+     * 💡 Web画面仕様:
+     * セッション認証（Auth::check()）を介して、ログイン済みのユーザーのみリクエストを許可します。
+     *
+     * @return bool 認証済みで実行を許可する場合は true、未認証は false
      */
     public function authorize(): bool
     {
@@ -18,9 +23,14 @@ class BookRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * 書籍の登録・更新時における各入力項目のバリデーションルール定義
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * 💡 セキュリティ・一意性仕様:
+     * リクエスト改ざんを防ぐため、user_id ルールはここに含めません。
+     * ISBNは、現在更新しようとしている対象書籍自身のID（$this->route('book')?->id）を
+     * unique制約の評価対象から安全に除外（プレイスホルダー付与）し、自データとの衝突を回避します。
+     *
+     * @return array<string, ValidationRule|array<mixed>|string> バリデーションルールの配列
      */
     public function rules(): array
     {
@@ -37,6 +47,11 @@ class BookRequest extends FormRequest
         ];
     }
 
+    /**
+     * バリデーションエラー発生時に画面へ返却するカスタム日本語メッセージの定義
+     *
+     * @return array<string, string> 属性名とエラー規則に対応するエラーメッセージの配列
+     */
     #[Override]
     public function messages(): array
     {

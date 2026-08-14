@@ -8,9 +8,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class UserResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * ユーザーモデルインスタンスを指定されたレスポンス配列構造へとトランスフォーム（成形変換）
      *
-     * @return array<string, mixed>
+     * @param  Request  $request  現在処理中の中央HTTPリクエストオブジェクト
+     * @return array<string, mixed> クライアントへ返却するAPIレスポンス用連想配列
      */
     public function toArray(Request $request): array
     {

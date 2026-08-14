@@ -14,11 +14,12 @@ class CreateNewUser implements CreatesNewUsers
     use PasswordValidationRules;
 
     /**
-     * Validate and create a newly registered user.
+     * 送信された入力データの検証を行い、新規ユーザーレコードを作成・返却
      *
-     * @param  array<string, string>  $input
+     * @param  array<string, string>  $input  名前、メールアドレス、パスワードを含むリクエスト配列
+     * @return User データベースに新規保存されたユーザーモデルインスタンス
      *
-     * @throws ValidationException
+     * @throws ValidationException 入力値に不整合や重複があった場合
      */
     public function create(array $input): User
     {

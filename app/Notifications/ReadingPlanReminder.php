@@ -19,16 +19,12 @@ class ReadingPlanReminder extends Notification
     protected $body;
 
     /**
-     * 新しい通知インスタンスの作成
+     * 新しい通知リマインダーインスタンスの生成
      *
-     * @param  ReadingPlan  $readingPlan  読書計画モデル
-     * @param  string  $timing  'three_days_before' | 'on_due_date' | 'three_days_after' など
-     * @param  string  $title  通知のタイトル
-     * @param  string  $body  通知の本文
-     */
-
-    /**
-     * Create a new notification instance.
+     * @param  ReadingPlan  $readingPlan  対象の読書計画モデル
+     * @param  string  $timing  通知タイミング識別子文字列
+     * @param  string  $title  配信する通知タイトル文字列
+     * @param  string  $body  配信する通知本文文字列
      */
     public function __construct(ReadingPlan $readingPlan, string $timing, string $title, string $body)
     {
@@ -39,9 +35,14 @@ class ReadingPlanReminder extends Notification
     }
 
     /**
-     * Get the notification's delivery channels.
+     * 通知を配信する対象チャンネル（配信経路）の定義
      *
-     * @return array<int, string>
+     * 💡 実装仕様:
+     * 本システムでは画面内通知一覧および未読カウントUIと連動させるため、
+     * database チャンネルのみを採用して永続化します。
+     *
+     * @param  object  $notifiable  通知を受信する対象のエンティティ（Userモデル等）
+     * @return array<int, string> 配信チャンネル名の配列
      */
     public function via(object $notifiable): array
     {
@@ -49,20 +50,10 @@ class ReadingPlanReminder extends Notification
     }
 
     /**
-     * Get the mail representation of the notification.
-     */
-    // public function toMail(object $notifiable): MailMessage
-    // {
-    //     return (new MailMessage)
-    //                 ->line('The introduction to the notification.')
-    //                 ->action('Notification Action', url('/'))
-    //                 ->line('Thank you for using our application!');
-    // }
-
-    /**
-     * Get the array representation of the notification.
+     * database チャンネルの `data` カラム（JSON型）にシリアライズして保存する配列構造の定義
      *
-     * @return array<string, mixed>
+     * @param  object  $notifiable  通知を受信する対象のエンティティ（Userモデル等）
+     * @return array<string, mixed> データベースにJSONとして格納する通知データの連想配列
      */
     public function toArray(object $notifiable): array
     {

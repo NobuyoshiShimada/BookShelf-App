@@ -6,70 +6,63 @@ use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Genre;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\View\View;
 
 class BookController extends Controller
 {
     use AuthorizesRequests;
 
     /**
-     * Display a listing of the resource.
+     * 書籍一覧画面の表示（検索・フィルタ・ソート・ページネーション対応）
+     *
+     * @param \Illuminate\Http\Request $request 検索キーワード、ジャンルID、ソートキーを含むリクエスト
+     * @return \Illuminate\View\View 書籍一覧画面のビュー
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $genres = Genre::all();
 
-        $query = Book::with('genres')
-            ->withAvg('reviews', 'rating')
-            ->withCount('reviews');
-
-        // キーワード検索
-        if ($request->filled('keyword')) {
-            $keyword = '%'.$request->input('keyword').'%';
-            $query->where(function ($q) use ($keyword) {
+        $books = Book::with('genres')
+        ->withAvg('reviews', 'rating')
+        ->withCount('reviews')
+        ->when($request->filled('keyword'), function ($query) use ($request) {
+            $keyword = '%' . $request->input('keyword') . '%';
+            $query->where(function ($q) use ($keyword){
                 $q->where('title', 'like', $keyword)
-                    ->orWhere('author', 'like', $keyword);
+                ->orWhere('author', 'like', $keyword);
             });
-        }
-
-        // ジャンル絞り込み
-        if ($request->filled('genre')) {
-            $genreId = $request->input('genre');
-            $query->whereHas('genres', function ($q) use ($genreId) {
-                $q->where('genres.id', $genreId);
+        })
+        ->when($request->filled('genre'), function ($query) use ($request) {
+            $query->whereHas('genres', function ($q) use ($request) {
+                $q->where('genres.id', $request->input('genre'));
             });
-        }
-
-        // ソート順
-        $sort = $request->input('sort', 'newest');
-        switch ($sort) {
-            case 'oldest':
-                $query->oldest();
-                break;
-            case 'rating':
-                $query->orderByRaw('reviews_avg_rating IS NULL ASC, reviews_avg_rating DESC')->latest();
-                break;
-            case 'title':
-                $query->orderBy('title', 'asc');
-                break;
-            case 'newest':
-            default:
-                $query->latest();
-                break;
-        }
-
-        $books = $query->paginate(10);
-        $books->appends($request->query());
+        })
+        ->when($request->input('sort', 'newest'), function ($query, $sort){
+            match ($sort) {
+                'oldest' => $query->oldest(),
+                'rating' => $query->orderByRaw('reviews_avg_rating IS NULL ASC, reviews_avg_rating DESC')->latest(),
+                'title'  => $query->orderBy('title', 'asc'),
+                default  => $query->latest(),
+            };
+        })
+        ->paginate(10)
+        ->appends($request->query());
 
         return view('books.index', compact('books', 'genres'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * 新規書籍登録画面の表示
+     *
+     * @return \Illuminate\View\View 新規書籍登録画面のビュー
      */
-    public function create()
+    public function create(): View
     {
         $genres = Genre::all();
 
@@ -77,9 +70,12 @@ class BookController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * 新規書籍のデータベース登録処理（関連ジャンルとの同期を内包）
+     *
+     * @param \App\Http\Requests\BookRequest $request バリデーション検証済みのリクエストオブジェクト
+     * @return \Illuminate\Http\RedirectResponse 書籍一覧画面へのリダイレクトレスポンス
      */
-    public function store(BookRequest $request)
+    public function store(BookRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -99,9 +95,12 @@ class BookController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * 書籍詳細画面の表示（関連レビューやいいね情報の遅延ロード対応）
+     *
+     * @param \App\Models\Book $book ルートモデルバインディングされた書籍モデルインスタンス
+     * @return \Illuminate\View\View 書籍詳細画面のビュー
      */
-    public function show(Book $book)
+    public function show(Book $book): View
     {
         $book->load(['genres', 'favoriteBooks', 'reviews.likedByUsers']);
 
@@ -109,9 +108,13 @@ class BookController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * 書籍編集画面の表示（登録者本人であることのポリシー認可制限付き）
+     *
+     * @param \App\Models\Book $book ルートモデルバインディングされた書籍モデルインスタンス
+     * @return \Illuminate\View\View 書籍編集画面のビュー
+     * @throws \Illuminate\Auth\Access\AuthorizationException 登録者本人ではないユーザーがアクセスした場合
      */
-    public function edit(Book $book)
+    public function edit(Book $book): View
     {
         $this->authorize('update', $book);
 
@@ -123,9 +126,14 @@ class BookController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * 既存の書籍情報の更新処理（登録者本人であることのポリシー認可制限付き）
+     *
+     * @param \App\Http\Requests\BookRequest $request バリデーション検証済みのリクエストオブジェクト
+     * @param \App\Models\Book $book 操作対象の書籍モデルインスタンス
+     * @return \Illuminate\Http\RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
+     * @throws \Illuminate\Auth\Access\AuthorizationException 登録者本人ではないユーザーがアクセスした場合
      */
-    public function update(BookRequest $request, Book $book)
+    public function update(BookRequest $request, Book $book): RedirectResponse
     {
         $this->authorize('update', $book);
 
@@ -147,23 +155,32 @@ class BookController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * 書籍データの削除処理（関連子データもトランザクション内で連動削除）
+     *
+     * @param \App\Models\Book $book 操作対象の書籍モデルインスタンス
+     * @return \Illuminate\Http\RedirectResponse 書籍一覧画面へのリダイレクトレスポンス
+     * @throws \Illuminate\Auth\Access\AuthorizationException 登録者本人ではないユーザーがアクセスした場合
      */
-    public function destroy(Book $book)
+    public function destroy(Book $book): RedirectResponse
     {
         $this->authorize('delete', $book);
 
-        $book->genres()->sync([]);
-
-        $book->reviews()->delete();
-
-        $book->delete();
+        DB::transaction(function () use ($book) {
+            $book->genres()->sync([]);
+            $book->reviews()->delete();
+            $book->delete();
+        });
 
         return redirect()->route('books.index')
             ->with('success', '書籍「'.$book->title.'」をデータベースから完全に削除しました。');
     }
 
-    public function ranking()
+    /**
+     * 総合評価ランキングTOP10画面の表示
+     *
+     * @return \Illuminate\View\View 総合ランキング画面のビュー
+     */
+    public function ranking(): View
     {
         $rankedBooks = Book::with(['genres', 'favoriteBooks'])
             ->withCount('reviews')
@@ -177,8 +194,13 @@ class BookController extends Controller
         return view('ranking.index', compact('rankedBooks'));
     }
 
-    // Google Books APIからISBN情報を非同期で取得してJSONで返す
-    public function searchIsbn($isbn)
+    /**
+     * Google Books API を使用した、ISBNコードによる書籍情報の非同期自動取得
+     *
+     * @param string $isbn 13桁のISBNコード文字列
+     * @return \Illuminate\Http\JsonResponse 取得に成功した書籍データ、またはエラーメッセージのJSON
+     */
+    public function searchIsbn(string $isbn): JsonResponse
     {
         // 13桁の数字チェック
         if (! preg_match('/^[0-9]{13}$/', $isbn)) {
@@ -195,7 +217,7 @@ class BookController extends Controller
                 ])
                 ->get('https://www.googleapis.com/books/v1/volumes', [
                     'q' => 'isbn:'.$isbn,
-                    // 'key' => env('GOOGLE_BOOKS_API_KEY'),
+                    'key' => env('GOOGLE_BOOKS_API_KEY'),
                 ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Googleサーバーへの接続に失敗しました: '.$e->getMessage()], 500);
@@ -230,7 +252,6 @@ class BookController extends Controller
             $imageUrl = str_replace('http://', 'https://', $imageUrl);
         }
 
-        // javaScript側が期待するキーで返却
         return response()->json([
             'title' => $volumeInfo['title'] ?? '',
             'author' => isset($volumeInfo['authors']) ? implode(', ', $volumeInfo['authors']) : '',
@@ -238,6 +259,5 @@ class BookController extends Controller
             'description' => $volumeInfo['description'] ?? '',
             'image_url' => $imageUrl,
         ]);
-
     }
 }

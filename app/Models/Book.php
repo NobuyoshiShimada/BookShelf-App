@@ -4,11 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Book extends Model
 {
     use HasFactory;
 
+    /**
+     * 複数代入（Mass Assignment）を許可する属性の配列
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'user_id',
         'title',
@@ -19,41 +27,63 @@ class Book extends Model
         'image_url',
     ];
 
+    /**
+     * 適切なデータ型へ強制変換（キャスト）する属性の配列
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'published_date' => 'date',
     ];
 
-    // この本を登録したユーザー(多対1)
-    public function user()
+    /**
+     * この書籍データをデータベースに登録した親ユーザーへの多対1リレーション
+     *
+     * @return BelongsTo ユーザーモデルへの紐付け
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // この本に投稿されたレビュー(1対多)
-
-    public function reviews()
+    /**
+     * この書籍に対して投稿された全ユーザーからのレビュー一覧への1対多リレーション
+     *
+     * @return HasMany レビューコレクションへの紐付け
+     */
+    public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
 
-    // この本に紐づいているジャンル一覧(多対多)
-    // 中間テーブル: book_genre
-    // $book->genres()でアクセス可能
-    public function genres()
+    /**
+     * この書籍に割り当てられているジャンル一覧への多対多リレーション
+     * （中間テーブル: `book_genre`）
+     *
+     * @return BelongsToMany ジャンルコレクションへの紐付け
+     */
+    public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class, 'book_genre')->withTimestamps();
     }
 
-    // この本をお気に入り登録しているユーザー一覧(多対多)
-    // 中間テーブル: favorites
-    // $book->favoriteBooks()でアクセス可能
-    public function favoriteBooks()
+    /**
+     * この書籍をお気に入り登録しているユーザー一覧への多対多リレーション
+     * （中間テーブル: `favorites`）
+     *
+     * @return BelongsToMany ユーザーコレクションへの紐付け
+     */
+    public function favoriteBooks(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
     }
 
-    // 読書計画の対象書籍
-    public function readingPlans()
+    /**
+     * この書籍を対象として作成された全ユーザーの読書計画一覧への1対多リレーション
+     *
+     * @return HasMany 読書計画コレクションへの紐付け
+     */
+    public function readingPlans(): HasMany
     {
         return $this->hasMany(ReadingPlan::class);
     }

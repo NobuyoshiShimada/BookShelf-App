@@ -193,6 +193,6 @@ class AdvancedBookCrudTest extends TestCase
 
         // 💡 期待値: 422 が返り、エラーメッセージが含まれていること
         $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['title', 'published_date']);
+            ->assertJsonValidationErrors(['title', 'published_date']);
     }
 }

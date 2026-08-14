@@ -9,7 +9,9 @@ use Override;
 class updateReadingPlanRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * リクエストを実行するユーザーの認証・実行権限チェック
+     *
+     * @return bool 常に実行を許可する場合は true
      */
     public function authorize(): bool
     {
@@ -17,9 +19,13 @@ class updateReadingPlanRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * 読書計画更新時における入力項目のバリデーションルール定義
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * 境界条件仕様:
+     * 変更後の目標期日（target_date）は必須かつ有効な日付形式であり、
+     * なおかつ本日以降の日付（after_or_equal:today）であることを厳密にチェックします。
+     *
+     * @return array<string, ValidationRule|array<mixed>|string> バリデーションルールの配列
      */
     public function rules(): array
     {
@@ -28,6 +34,11 @@ class updateReadingPlanRequest extends FormRequest
         ];
     }
 
+    /**
+     * バリデーションエラー発生時に返却するカスタム日本語メッセージの定義
+     *
+     * @return array<string, string> 属性名とエラー規則に対応するエラーメッセージの配列
+     */
     #[Override]
     public function messages()
     {

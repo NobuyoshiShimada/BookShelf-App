@@ -9,7 +9,12 @@ use Override;
 class UpdateBookRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * リクエストの実行権限チェック
+     *
+     * Sanctum（auth:sanctum）ミドルウェアが手前で認証を
+     * 強制担保するため、リクエストクラス内では一律で実行を許可します。
+     *
+     * @return bool 常に実行を許可する場合は true
      */
     public function authorize(): bool
     {
@@ -17,9 +22,14 @@ class UpdateBookRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * 書籍更新時における各入力項目のバリデーションルール定義
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * セキュリティ・一意性仕様:
+     * リクエスト改ざんを防ぐため、user_id ルールはここに含めません。
+     * ISBNは、現在更新しようとしている対象書籍自身のID（$this->route('book')?->id）を
+     * unique制約の評価対象から安全に除外（プレイスホルダー付与）し、自データとの衝突を回避します。
+     *
+     * @return array<string, ValidationRule|array<mixed>|string> バリデーションルールの配列
      */
     public function rules(): array
     {
@@ -36,8 +46,13 @@ class UpdateBookRequest extends FormRequest
         ];
     }
 
+    /**
+     * バリデーションエラー発生時にクライアントへ返却するカスタム日本語メッセージの定義
+     *
+     * @return array<string, string> 属性名とエラー規則に対応するエラーメッセージの配列
+     */
     #[Override]
-    public function messages()
+    public function messages(): array
     {
         return [
             'title.required' => 'タイトルは必須です。',

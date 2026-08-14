@@ -8,9 +8,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BookResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * 書籍モデルインスタンスを指定されたレスポンス配列構造へとトランスフォーム（成形変換）
      *
-     * @return array<string, mixed>
+     * 実装仕様:
+     * N+1問題を防止するため、User, Genres, Reviews などのリレーションデータは
+     * コントローラー側で Eager Loading（load）されている場合のみ動的に内包（whenLoaded）します。
+     * また、集計値（平均評価点など）の浮動小数点数への厳格なキャストを担保します。
+     *
+     * @param  Request  $request  現在処理中の中央HTTPリクエストオブジェクト
+     * @return array<string, mixed> クライアントへ返却するAPIレスポンス用連想配列
      */
     public function toArray(Request $request): array
     {

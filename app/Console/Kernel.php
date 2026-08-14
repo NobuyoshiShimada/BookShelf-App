@@ -8,7 +8,12 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     /**
-     * Define the application's command schedule.
+     * アプリケーション全体の定期タスク（バックグラウンドジョブ）のスケジュール定義
+     *
+     * 💡 登録仕様:
+     * 読書計画の自動期日判定 ＆ 通知配信バッチコマンドを、毎日深夜0:00に自動実行（daily）するように登録しています。
+     *
+     * @param  Schedule  $schedule  タスクスケジュールを管理するオブジェクト
      */
     protected function schedule(Schedule $schedule): void
     {
@@ -18,7 +23,10 @@ class Kernel extends ConsoleKernel
     }
 
     /**
-     * Register the commands for the application.
+     * アプリケーション専用のカスタム Artisan コマンドの登録・スキャン処理
+     *
+     * `app/Console/Commands` フォルダ内のすべてのコマンドファイルを自動ロードし、
+     * 合わせてコンソール用ルーティング（`routes/console.php`）を読み込みます。
      */
     protected function commands(): void
     {

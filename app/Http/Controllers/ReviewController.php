@@ -6,17 +6,24 @@ use App\Http\Requests\ReviewRequest;
 use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ReviewController extends Controller
 {
     use AuthorizesRequests;
 
     /**
-     * Store a newly created resource in storage.
+     * 対象書籍に対する新規レビューのデータベース登録処理
+     *
+     * @param  ReviewRequest  $request  入力バリデーション済みのリクエスト
+     * @param  Book  $book  レビュー対象の書籍モデルインスタンス
+     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
      */
-    public function store(ReviewRequest $request, Book $book)
+    public function store(ReviewRequest $request, Book $book): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -31,9 +38,12 @@ class ReviewController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * 投稿したレビューの編集画面の表示
+     *
+     * @param  Review  $review  ルートモデルバインディングされたレビューモデル
+     * @return View レビュー編集画面のビュー
      */
-    public function edit(Review $review)
+    public function edit(Review $review): View
     {
         $this->authorize('update', $review);
 
@@ -41,9 +51,13 @@ class ReviewController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * 既存レビュー情報の更新処理
+     *
+     * @param  ReviewRequest  $request  入力バリデーション済みのリクエスト
+     * @param  Review  $review  ルートモデルバインディングされたレビューモデル
+     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
      */
-    public function update(ReviewRequest $request, Review $review)
+    public function update(ReviewRequest $request, Review $review): RedirectResponse
     {
         $this->authorize('update', $review);
 
@@ -59,9 +73,12 @@ class ReviewController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * 投稿済みレビューデータの削除処理
+     *
+     * @param  Review  $review  ルートモデルバインディングされたレビューモデル
+     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
      */
-    public function destroy(Review $review)
+    public function destroy(Review $review): RedirectResponse
     {
         $this->authorize('delete', $review);
 
@@ -73,7 +90,15 @@ class ReviewController extends Controller
             ->with('success', 'レビューを削除しました。');
     }
 
-    public function toggle($id)
+    /**
+     * 特定のレビューに対する「いいね！」状態をトグル（登録・解除を反転）処理
+     *
+     * @param  int|string  $id  いいね対象のレビュー主キーID
+     * @return RedirectResponse 直前の画面へのリダイレクトレスポンス
+     *
+     * @throws ModelNotFoundException 対象のレビューが存在しない場合
+     */
+    public function toggle(string $id)
     {
         $review = Review::findOrFail($id);
 

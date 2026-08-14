@@ -9,7 +9,12 @@ use Override;
 class StoreBookRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * リクエストの実行権限チェック
+     *
+     * Sanctum（auth:sanctum）ミドルウェアが手前で認証を
+     * 強制担保するため、リクエストクラス内では一律で実行を許可します。
+     *
+     * @return bool 常に実行を許可する場合は true
      */
     public function authorize(): bool
     {
@@ -17,9 +22,13 @@ class StoreBookRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * 新規書籍登録時における各入力項目のバリデーションルール定義
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * セキュリティ要件仕様:
+     * リクエスト改ざんによる特権昇格を防ぐため、user_id ルールはここに一切含めません。
+     * また、ISBNは13桁の文字列サイズチェックと、booksテーブル内での一意性を厳格にチェックします。
+     *
+     * @return array<string, ValidationRule|array<mixed>|string> バリデーションルールの配列
      */
     public function rules(): array
     {
@@ -36,6 +45,11 @@ class StoreBookRequest extends FormRequest
         ];
     }
 
+    /**
+     * バリデーションエラー発生時にクライアントへ返却するカスタム日本語メッセージの定義
+     *
+     * @return array<string, string> 属性名とエラー規則に対応するエラーメッセージの配列
+     */
     #[Override]
     public function messages(): array
     {

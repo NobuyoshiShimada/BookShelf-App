@@ -5,100 +5,103 @@ namespace App\Http\Controllers;
 use App\Enums\ReadingPlanStatus;
 use App\Models\ReadingPlan;
 use App\Models\Review;
+use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ReadingReportController extends Controller
 {
-    public function index()
+    /**
+     * 読書傾向・統計ダッシュボード画面の表示
+     *
+     * @return View 読書レポート画面のビュー
+     */
+    public function index(): View
     {
-        $userId = Auth::id();
+        $user = Auth::user();
 
-        // 基本設計
-        // 総レビュー数
-        $totalReviews = Review::where('user_id', $userId)->count();
+        $stats = $this->generateReportStatus($user);
 
-        // 読了件数
-        $booksRead = ReadingPlan::where('user_id', $userId)
+        return view('reports.index', compact('stats'));
+
+    }
+
+    /**
+     * 統計・ランキングデータの生成
+     *
+     * @param  User  $user  認証ユーザーインスタンス
+     * @return array<string, mixed> 画面に渡す統計データを内包した連想配列
+     */
+    private function generateReportStatus(User $user): array
+    {
+        // 1.基本統計
+        $reviews = Review::where('user_id', $user->id)->get();
+        $completedPlans = ReadingPlan::where('user_id', $user->id)
             ->where('status', ReadingPlanStatus::Completed->value)
-            ->count();
-
-        // 平均評価
-        $averageRating = Review::where('user_id', $userId)->avg('rating');
-        $averageRating = $averageRating ? (float) $averageRating : 0;
-
-        // 評価分布
-        $ratingDistribution = collect([0 => 0, 1 => 0, 2 => 0, 3 => 0, 4 => 0]);
-
-        $reviewCounts = Review::where('user_id', $userId)
-            ->select('rating', DB::raw('count(*) as total'))
-            ->groupBy('rating')
             ->get();
 
-        foreach ($reviewCounts as $rc) {
-            if ($rc->rating >= 1 && $rc->rating <= 5) {
-                $ratingDistribution[$rc->rating - 1] = $rc->total;
-            }
-        }
+        // 総レビュー数
+        $totalReviews = $reviews->count();
+        // 総読了件数
+        $totalCompleted = $completedPlans->count();
+        // 評価の平均値
+        $averageRating = number_format($reviews->avg('rating') ?? 0.0, 1);
 
-        // 高評価書籍TOP5
-        $topRatedBooks = Review::with('book')
-            ->where('user_id', $userId)
-            ->where('rating', '>=', 4)
-            ->orderByDesc('rating')
-            ->orderByDesc('created_at')
+        // 1.評価分布
+        $ratingGroup = $reviews->groupBy('rating');
+        $ratingDistribution = collect([0, 1, 2, 3, 4])
+            ->mapWithKeys(function (int $index) use ($ratingGroup) {
+                $star = $index + 1;
+
+                return [$index => $ratingGroup->get($star, collect())->count()];
+            });
+
+        // 2.高評価書籍top5
+        $topRatedBooks = $reviews->filter(fn (Review $r) => $r->rating >= 4 && isset($r->book))
+            ->sortByDesc('rating')
             ->take(5)
-            ->get()
-            ->map(function ($review) {
+            ->map(fn (Review $r) => [
+                'id' => $r->book->id,
+                'title' => $r->book->title ?? '不明な書籍',
+                'author' => $r->book->author ?? '不明な著者',
+                'rating' => $r->rating,
+            ])
+            ->values();
+
+        // 3.ジャンル別評価傾向top5
+        $genreRatings = $reviews->flatMap(fn (Review $r) => collect($r->book->genres ?? [])->map(fn ($genre) => [
+            'id' => $genre->id,
+            'genre_name' => $genre->name,
+            'rating' => $r->rating,
+        ]))
+            ->groupBy('genre_name')
+            ->map(function (Collection $genreReviews, string $name) {
+                $firstItem = $genreReviews->first();
+                $genreId = $firstItem['id'] ?? null;
+
                 return [
-                    'id' => $review->book->id ?? null,
-                    'title' => $review->book->title ?? '不明な書籍',
-                    'author' => $review->book->author ?? '不明な著者',
-                    'rating' => $review->rating,
+                    'id' => $genreId,
+                    'name' => $name,
+                    'average_rating' => number_format($genreReviews->avg('rating'), 1),
+                    'count' => $genreReviews->count(),
                 ];
             })
-            ->filter(fn ($item) => ! is_null($item['id']))
+            ->sortByDesc('average_rating')
+            ->take(5)
             ->values()
-            ->toArray();
+            ->all();
 
-        // ジャンル別評価傾向TOP5
-        $genreRatings = DB::table('reviews')
-            ->join('book_genre', 'reviews.book_id', '=', 'book_genre.book_id')
-            ->join('genres', 'book_genre.genre_id', '=', 'genres.id')
-            ->where('reviews.user_id', $userId)
-            ->select(
-                'genres.id',
-                'genres.name',
-                DB::raw('count(reviews.id) as count'),
-                DB::raw('avg(reviews.rating) as average_rating'),
-            )
-            ->groupBy('genres.id', 'genres.name')
-            ->orderByDesc('average_rating')
-            ->orderByDesc('count')
-            ->take(5)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'count' => $item->count,
-                    'average_rating' => (float) $item->average_rating,
-                ];
-            })
-            ->toArray();
-
-        // ビューへ渡す連想配列
-        $stats = [
+        // 最終データのバインド
+        return [
             'summary' => [
                 'total_reviews' => $totalReviews,
-                'books_read' => $booksRead,
+                'books_read' => $totalCompleted,
                 'average_rating' => $averageRating,
             ],
             'rating_distribution' => $ratingDistribution,
             'top_rated_books' => $topRatedBooks,
             'genre_ratings' => $genreRatings,
         ];
-
-        return view('reports.index', compact('stats'));
     }
 }

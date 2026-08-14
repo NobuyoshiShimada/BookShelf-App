@@ -10,7 +10,9 @@ use Override;
 class StoreReadingPlanRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * リクエストを実行するユーザーの認証・実行権限チェック
+     *
+     * @return bool 常に実行を許可する場合は true
      */
     public function authorize(): bool
     {
@@ -18,9 +20,14 @@ class StoreReadingPlanRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * 新規読書計画登録時における各入力項目のバリデーションルール定義
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * セキュリティ・重複防御仕様:
+     * パラメータ改ざんを防ぐため user_id はリクエストに含めず、
+     * データベースの一意制約と連動して、現在ログイン中のユーザー (auth()->id()) が
+     * 同一の book_id で二重に計画を登録しようとしたケースを Rule::unique で弾きます。
+     *
+     * @return array<string, ValidationRule|array<mixed>|string> バリデーションルールの配列
      */
     public function rules(): array
     {
@@ -37,6 +44,11 @@ class StoreReadingPlanRequest extends FormRequest
         ];
     }
 
+    /**
+     * バリデーションエラー発生時に返却するカスタム日本語メッセージの定義
+     *
+     * @return array<string, string> 属性名とエラー規則に対応するエラーメッセージの配列
+     */
     #[Override]
     public function messages()
     {

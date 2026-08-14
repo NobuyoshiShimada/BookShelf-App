@@ -17,8 +17,11 @@ class AdvancedReadingPlanTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private User $otherUser;
+
     private Book $book1;
+
     private Book $book2;
 
     protected function setUp(): void
@@ -168,40 +171,40 @@ class AdvancedReadingPlanTest extends TestCase
             'status' => 'reading',
         ]));
         $response->assertStatus(200)
-        ->assertSee('Laravel実践')
-        ->assertDontSee('PHP問題集')
-        ->assertDontSee('読了済みの本')
-        ->assertDontSee('期日超過の本');
+            ->assertSee('Laravel実践')
+            ->assertDontSee('PHP問題集')
+            ->assertDontSee('読了済みの本')
+            ->assertDontSee('期日超過の本');
 
         // 未読のみ
         $response = $this->actingAs($this->user)->get(route('reading-plans.index', [
             'status' => 'unread',
         ]));
         $response->assertStatus(200)
-        ->assertSee('PHP問題集')
-        ->assertDontSee('Laravel実践')
-        ->assertDontSee('読了済みの本')
-        ->assertDontSee('期日超過の本');
+            ->assertSee('PHP問題集')
+            ->assertDontSee('Laravel実践')
+            ->assertDontSee('読了済みの本')
+            ->assertDontSee('期日超過の本');
 
         // 読了のみ
         $response = $this->actingAs($this->user)->get(route('reading-plans.index', [
             'status' => 'completed',
         ]));
         $response->assertStatus(200)
-        ->assertSee('読了済みの本')
-        ->assertDontSee('Laravel実践')
-        ->assertDontSee('PHP問題集')
-        ->assertDontSee('期日超過の本');
+            ->assertSee('読了済みの本')
+            ->assertDontSee('Laravel実践')
+            ->assertDontSee('PHP問題集')
+            ->assertDontSee('期日超過の本');
 
         // 読了のみ
         $response = $this->actingAs($this->user)->get(route('reading-plans.index', [
             'status' => 'overdue',
         ]));
         $response->assertStatus(200)
-        ->assertSee('期日超過の本')
-        ->assertDontSee('Laravel実践')
-        ->assertDontSee('PHP問題集')
-        ->assertDontSee('読了済みの本');
+            ->assertSee('期日超過の本')
+            ->assertDontSee('Laravel実践')
+            ->assertDontSee('PHP問題集')
+            ->assertDontSee('読了済みの本');
     }
 
     public function test_読書計画の新規登録画面の表示と、登録処理(): void
@@ -236,7 +239,7 @@ class AdvancedReadingPlanTest extends TestCase
 
         // 更新
         $newDate = Carbon::today()->addDays(10)->format('Y-m-d');
-        $this->actingAs($this->user)->put(route('reading-plans.update', $plan->id),[
+        $this->actingAs($this->user)->put(route('reading-plans.update', $plan->id), [
             'target_date' => $newDate,
         ])->assertRedirect(route('reading-plans.index'));
 
