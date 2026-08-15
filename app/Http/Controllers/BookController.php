@@ -47,7 +47,7 @@ class BookController extends Controller
             match ($sort) {
                 'oldest' => $query->oldest(),
                 'rating' => $query->orderByRaw('reviews_avg_rating IS NULL ASC, reviews_avg_rating DESC')->latest(),
-                'title'  => $query->orderBy('title', 'asc'),
+                'title'  => $query->orderByRaw('title COLLATE utf8mb4_unicode_ci ASC'),
                 default  => $query->latest(),
             };
         })

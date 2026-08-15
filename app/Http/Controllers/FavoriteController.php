@@ -39,8 +39,12 @@ class FavoriteController extends Controller
         /** @var User */
         $user = Auth::user();
 
-        $user->favoriteBooks()->toggle($book->id);
+        $result = collect($user->favoriteBooks()->toggle($book->id));
 
-        return back()->with('success', 'お気に入りを追加しました。');
+        $message = $result->get('detached', []) !== []
+        ? 'お気に入りを解除しました。'
+        : 'お気に入りを追加しました。';
+
+        return back()->with('success', $message);
     }
 }
