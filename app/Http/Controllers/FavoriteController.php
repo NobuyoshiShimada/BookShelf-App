@@ -29,7 +29,7 @@ class FavoriteController extends Controller
     }
 
     /**
-     * 指定された書籍のお気に入り状態をトグル（登録・解除を反転）処理
+     * 指定された書籍のお気に入り状態をトグル（登録・解除を反転）
      *
      * @param  Book  $book  トグル対象の書籍モデルインスタンス
      * @return RedirectResponse 直前の画面へのリダイレクトレスポンス
@@ -39,9 +39,9 @@ class FavoriteController extends Controller
         /** @var User */
         $user = Auth::user();
 
-        $result = collect($user->favoriteBooks()->toggle($book->id));
+        $status = $user->toggleFavoriteBook($book->id);
 
-        $message = $result->get('detached', []) !== []
+        $message = $status === 'detached'
         ? 'お気に入りを解除しました。'
         : 'お気に入りを追加しました。';
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Genre;
+use App\Services\GoogleBooksService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,39 +25,37 @@ class BookController extends Controller
      * @param \Illuminate\Http\Request $request 検索キーワード、ジャンルID、ソートキーを含むリクエスト
      * @return \Illuminate\View\View 書籍一覧画面のビュー
      */
-    public function index(Request $request): View
+ public function index(Request $request): View
     {
         $genres = Genre::all();
 
-        $books = Book::with('genres')
-        ->withAvg('reviews', 'rating')
-        ->withCount('reviews')
-        ->when($request->filled('keyword'), function ($query) use ($request) {
-            $keyword = '%' . $request->input('keyword') . '%';
-            $query->where(function ($q) use ($keyword){
-                $q->where('title', 'like', $keyword)
-                ->orWhere('author', 'like', $keyword);
-            });
-        })
-        ->when($request->filled('genre'), function ($query) use ($request) {
-            $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('genres.id', $request->input('genre'));
-            });
-        })
-        ->when($request->input('sort', 'newest'), function ($query, $sort){
-            match ($sort) {
-                'oldest' => $query->oldest(),
-                'rating' => $query->orderByRaw('reviews_avg_rating IS NULL ASC, reviews_avg_rating DESC')->latest(),
-                'title'  => $query->orderByRaw('title COLLATE utf8mb4_unicode_ci ASC'),
-                default  => $query->latest(),
-            };
-        })
-        ->paginate(10)
-        ->appends($request->query());
+        $books = Book::withAvg('reviews', 'rating')
+            ->when($request->filled('keyword'), function ($query) use ($request) {
+                $keyword = '%' . $request->input('keyword') . '%';
+                $query->where(function ($q) use ($keyword){
+                    $q->where('title', 'like', $keyword)
+                      ->orWhere('author', 'like', $keyword);
+                });
+            })
+            ->when($request->filled('genre'), function ($query) use ($request) {
+                $query->whereHas('genres', function ($q) use ($request) {
+                    $q->where('genres.id', $request->input('genre'));
+                });
+            })
+            ->when($request->input('sort', 'newest'), function ($query, $sort){
+                match ($sort) {
+                    'oldest' => $query->oldest(),
+                    'rating' => $query->orderBy('reviews_avg_rating', 'desc')->latest(),
+                    'title'  => $query->orderBy('title', 'asc'),
+                    default  => $query->latest(),
+                };
+            })
+            ->with(['genres'])
+            ->paginate(10)
+            ->appends($request->query());
 
         return view('books.index', compact('books', 'genres'));
     }
-
     /**
      * 新規書籍登録画面の表示
      *
@@ -70,28 +69,18 @@ class BookController extends Controller
     }
 
     /**
-     * 新規書籍のデータベース登録処理（関連ジャンルとの同期を内包）
-     *
-     * @param \App\Http\Requests\BookRequest $request バリデーション検証済みのリクエストオブジェクト
-     * @return \Illuminate\Http\RedirectResponse 書籍一覧画面へのリダイレクトレスポンス
+     * 新規書籍のデータベース登録処理
      */
     public function store(BookRequest $request): RedirectResponse
     {
-        $validated = $request->validated();
+        // 💡 永続化とリレーション同期はモデルの createWithGenres に丸投げ
+        $book = Book::createWithGenres(
+            array_merge($request->validated(), ['user_id' => Auth::id()]),
+            $request->input('genres', [])
+        );
 
-        $book = Book::create([
-            'user_id' => Auth::id(),
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'],
-            'image_url' => $validated['image_url'],
-        ]);
-
-        $book->genres()->sync($request->genres);
-
-        return redirect()->route('books.index')->with('success', '書籍「'.$book->title.'」を新しく登録しました。');
+        return redirect()->route('books.index')
+            ->with('success', "書籍「{$book->title}」を新しく登録しました。");
     }
 
     /**
@@ -102,7 +91,7 @@ class BookController extends Controller
      */
     public function show(Book $book): View
     {
-        $book->load(['genres', 'favoriteBooks', 'reviews.likedByUsers']);
+        $book->loadMissing(['genres', 'favoriteBooks', 'reviews.likedByUsers']);
 
         return view('books.show', compact('book'));
     }
@@ -126,50 +115,33 @@ class BookController extends Controller
     }
 
     /**
-     * 既存の書籍情報の更新処理（登録者本人であることのポリシー認可制限付き）
-     *
-     * @param \App\Http\Requests\BookRequest $request バリデーション検証済みのリクエストオブジェクト
-     * @param \App\Models\Book $book 操作対象の書籍モデルインスタンス
-     * @return \Illuminate\Http\RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
-     * @throws \Illuminate\Auth\Access\AuthorizationException 登録者本人ではないユーザーがアクセスした場合
+     * 既存の書籍情報の更新処理
      */
     public function update(BookRequest $request, Book $book): RedirectResponse
     {
         $this->authorize('update', $book);
 
-        $validated = $request->validated();
-
-        $book->update([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'],
-            'image_url' => $validated['image_url'],
-        ]);
-
-        $book->genres()->sync($request->genres);
+        // 💡 リレーション同期を含む一括更新ロジックをモデルへ完全委譲
+        $book->updateWithGenres(
+            $request->validated(),
+            $request->input('genres', [])
+        );
 
         return redirect()->route('books.show', $book)
-            ->with('success', '書籍「'.$book->title.'」の情報を更新しました。');
+            ->with('success', "書籍「{$book->title}」の情報を更新しました。");
     }
 
     /**
-     * 書籍データの削除処理（関連子データもトランザクション内で連動削除）
+     * 書籍データの削除処理
      *
-     * @param \App\Models\Book $book 操作対象の書籍モデルインスタンス
-     * @return \Illuminate\Http\RedirectResponse 書籍一覧画面へのリダイレクトレスポンス
-     * @throws \Illuminate\Auth\Access\AuthorizationException 登録者本人ではないユーザーがアクセスした場合
+     * @param \App\Models\Book $book
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Book $book): RedirectResponse
     {
         $this->authorize('delete', $book);
 
-        DB::transaction(function () use ($book) {
-            $book->genres()->sync([]);
-            $book->reviews()->delete();
-            $book->delete();
-        });
+        $book->purgeFully();
 
         return redirect()->route('books.index')
             ->with('success', '書籍「'.$book->title.'」をデータベースから完全に削除しました。');
@@ -183,24 +155,21 @@ class BookController extends Controller
     public function ranking(): View
     {
         $rankedBooks = Book::with(['genres', 'favoriteBooks'])
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
-            ->having('reviews_count', '>', 0)
-            ->orderByDesc('reviews_avg_rating')
-            ->orderByDesc('reviews_count')
-            ->take(10)
-            ->get();
+        ->has('reviews')
+        ->withCount('reviews')
+        ->withAvg('reviews', 'rating')
+        ->orderBy('reviews_avg_rating', 'desc')
+        ->orderBy('reviews_count', 'desc')
+        ->take(10)
+        ->get();
 
         return view('ranking.index', compact('rankedBooks'));
     }
 
     /**
-     * Google Books API を使用した、ISBNコードによる書籍情報の非同期自動取得
-     *
-     * @param string $isbn 13桁のISBNコード文字列
-     * @return \Illuminate\Http\JsonResponse 取得に成功した書籍データ、またはエラーメッセージのJSON
+     * ISBNコードによる書籍情報の非同期自動取得API
      */
-    public function searchIsbn(string $isbn): JsonResponse
+    public function searchIsbn(string $isbn, GoogleBooksService $googleBooksService): JsonResponse
     {
         // 13桁の数字チェック
         if (! preg_match('/^[0-9]{13}$/', $isbn)) {
@@ -208,56 +177,11 @@ class BookController extends Controller
                 'error' => 'ISBNは13桁の数字で入力してください。'], 400);
         }
 
-        // Google Book APIへの問い合わせ
         try {
-            $response = Http::withoutVerifying()
-                ->timeout(10)
-                ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                ])
-                ->get('https://www.googleapis.com/books/v1/volumes', [
-                    'q' => 'isbn:'.$isbn,
-                    'key' => env('GOOGLE_BOOKS_API_KEY'),
-                ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Googleサーバーへの接続に失敗しました: '.$e->getMessage()], 500);
+            $bookDate = $googleBooksService->fetchByIsbn($isbn);
+            return response()->json($bookDate);
+        } catch(\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 404);
         }
-
-        if ($response->failed()) {
-            return response()->json(['error' => 'Google APIからエラーが返されました (ステータスコード: '.$response->status().')'], 500);
-        }
-
-        $data = $response->json();
-
-        // 該当する書籍が見つからない時
-        if (! isset($data['items'][0]['volumeInfo'])) {
-            return response()->json(['error' => '該当する書籍情報が見つかりませんでした。'], 404);
-        }
-
-        $volumeInfo = $data['items'][0]['volumeInfo'];
-
-        // 出版日
-        $publishedDate = $volumeInfo['publishedDate'] ?? null;
-
-        if ($publishedDate && strlen($publishedDate) === 4) {
-            $publishedDate .= '-01-01';
-        } elseif ($publishedDate && strlen($publishedDate) === 7) {
-            $publishedDate .= '-01';
-        }
-
-        // 画像URLの取得（サムネイルが存在する場合のみ）
-        $imageUrl = $volumeInfo['imageLinks']['thumbnail'] ?? '';
-
-        if ($imageUrl) {
-            $imageUrl = str_replace('http://', 'https://', $imageUrl);
-        }
-
-        return response()->json([
-            'title' => $volumeInfo['title'] ?? '',
-            'author' => isset($volumeInfo['authors']) ? implode(', ', $volumeInfo['authors']) : '',
-            'published_date' => $publishedDate,
-            'description' => $volumeInfo['description'] ?? '',
-            'image_url' => $imageUrl,
-        ]);
     }
 }

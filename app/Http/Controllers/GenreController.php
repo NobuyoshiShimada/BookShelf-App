@@ -58,7 +58,9 @@ class GenreController extends Controller
      */
     public function show(Genre $genre): View
     {
-        $books = $genre->books()->paginate(10);
+        $books = $genre->books()
+        ->with(['genres', 'user'])
+        ->paginate(10);
 
         return view('genres.show', compact('genre', 'books'));
     }
@@ -91,21 +93,17 @@ class GenreController extends Controller
 
         return redirect()->route('genres.index', $genre)
             ->with('success', 'ジャンル「'.$genre->name.'」の情報を更新しました。');
-
     }
 
     /**
-     * ジャンルの削除処理（関連書籍との中間テーブル紐付け解除をトランザクション内で処理）
+     * ジャンルの削除処理
      *
-     * @param  Genre  $genre  ルートモデルバインディングされたジャンルモデル
-     * @return RedirectResponse ジャンル一覧画面へのリダイレクトレスポンス
+     * @param \App\Models\Genre $genre
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Genre $genre): RedirectResponse
     {
-        DB::transaction(function () use ($genre) {
-            $genre->books()->sync([]);
-            $genre->delete();
-        });
+        $genre->purgeFully();
 
         return redirect()->route('genres.index')
             ->with('success', 'ジャンル「'.$genre->name.'」を削除しました。');

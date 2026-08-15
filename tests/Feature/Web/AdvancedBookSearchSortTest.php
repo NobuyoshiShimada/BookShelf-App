@@ -143,7 +143,7 @@ class AdvancedBookSearchSortTest extends TestCase
                                 ['type' => 'ISBN_13', 'identifier' => '3456789012345'],
                             ],
                             'description' => 'これはHttp::fakeによって作成されたテストデータです',
-                            'imageLinks' => ['thumbnail' => 'https//example.com'],
+                            'imageLinks' => ['thumbnail' => 'https://example.com'],
                         ],
                     ],
                 ],
@@ -183,6 +183,6 @@ class AdvancedBookSearchSortTest extends TestCase
             'isbn' => '3456789012345',
         ]));
 
-        $response->assertStatus(500);
+        $response->assertStatus(404);
     }
 }

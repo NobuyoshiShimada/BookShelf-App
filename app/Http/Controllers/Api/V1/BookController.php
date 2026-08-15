@@ -23,23 +23,23 @@ class BookController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $books = Book::with('genres')
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
+        $books = Book::withAvg('reviews', 'rating')
             ->when($request->filled('keyword'), function ($query) use ($request) {
                 $keyword = '%' . $request->input('keyword') . '%';
                 $query->where(function ($q) use ($keyword) {
                     $q->where('title', 'like', $keyword)
-                    ->orWhere('author', 'like', $keyword)
-                    ->orWhere('description', 'like', $keyword)
-                    ->orWhere('isbn', 'like', $keyword);
-                });
-        })
-        ->when($request->filled('genre_id'), function ($query) use ($request) {
-                $query->whereHas('genres', function ($q) use ($request) {
-                    $q->where('genres.id', $request->input('genre_id'));
+                    ->orWhere('author', 'like', $keyword);
                 });
             })
+        ->when($request->input('sort', 'newest'), function ($query, $sort) {
+                match ($sort) {
+                    'oldest' => $query->oldest(),
+                    'rating' => $query->orderBy('reviews_avg_rating', 'desc')->latest(),
+                    'title'  => $query->orderBy('title', 'asc'),
+                    default  => $query->latest(),
+                };
+            })
+            ->with(['genres'])
             ->latest()
             ->paginate(
                 min((int) $request->input('per_page', 10), 100)
@@ -58,21 +58,12 @@ class BookController extends Controller
      */
     public function store(StoreBookRequest $request): JsonResponse
     {
-        $validated = $request->validated();
+        $book = Book::createWithGenres(
+            array_merge($request->validated(), ['user_id' => Auth::id()]),
+            $request->input('genres', [])
+        );
 
-        $book = Book::create([
-            'user_id' => Auth::id(),
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-        ]);
-
-        collect($request->input('genres'))->whenNotEmpty(fn ($genres) => $book->genres()->sync($genres));
-
-        return (new BookResource($book->load('genres')))
+        return (new BookResource($book->loadMissing('genres')))
             ->response()
             ->setStatusCode(201);
     }
@@ -85,12 +76,11 @@ class BookController extends Controller
      */
     public function show(Book $book): BookResource
     {
-        $book->load(['genres', 'user', 'reviews' => function ($query) {
-            $query->with('user')->withCount('likedByUsers');
-        }]);
-
-        $book->loadCount('reviews');
-        $book->loadAvg('reviews', 'rating');
+        $book->loadMissing([
+            'genres',
+            'user',
+            'reviews.user',
+        ])->loadCount('reviews')->loadAvg('reviews', 'rating');
 
         return new BookResource($book);
     }
@@ -102,32 +92,16 @@ class BookController extends Controller
      * @param  Book  $book  操作対象の書籍モデル
      * @return BookResource|JsonResponse 更新成功時はリソース、認可失敗時は403 JSON
      */
-    public function update(UpdateBookRequest $request, Book $book): BookResource|JsonResponse
+    public function update(UpdateBookRequest $request, Book $book): BookResource
     {
-        try {
-            $this->authorize('update', $book);
-        } catch (AuthorizationException $e) {
-            return response()->json([
-                'message' => '自分が登録した書籍情報のみ更新できます。',
-            ], 403);
-        }
+        $this->authorize('update', $book);
 
-        $validated = $request->validated();
+        $book->updateWithGenres(
+            $request->validated(),
+            $request->has('genres') ? $request->input('genres') : null
+        );
 
-        $book->update([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-        ]);
-
-        if ($request->has('genres')) {
-            $book->genres()->sync($request->genres);
-        }
-
-        return new BookResource($book->load('genres'));
+        return new BookResource($book->loadMissing('genres'));
     }
 
     /**
@@ -138,17 +112,9 @@ class BookController extends Controller
      */
     public function destroy(Book $book): JsonResponse
     {
-        try {
-            $this->authorize('delete', $book);
-        } catch (AuthorizationException $e) {
-            return response()->json([
-                'message' => '自分が登録した書籍のみ削除できます。',
-            ], 403);
-        }
+        $this->authorize('delete', $book);
 
-        $book->genres()->sync([]);
-        $book->reviews()->delete();
-        $book->delete();
+        $book->purgeFully();
 
         return response()->json([
             'message' => '書籍情報を削除しました。',

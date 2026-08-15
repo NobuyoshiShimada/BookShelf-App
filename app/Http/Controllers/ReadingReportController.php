@@ -36,7 +36,9 @@ class ReadingReportController extends Controller
     private function generateReportStatus(User $user): array
     {
         // 1.基本統計
-        $reviews = Review::where('user_id', $user->id)->get();
+        $reviews = Review::with(['book.genres', 'book.user'])
+        ->where('user_id', $user->id)
+        ->get();
         $completedPlans = ReadingPlan::where('user_id', $user->id)
             ->where('status', ReadingPlanStatus::Completed->value)
             ->get();

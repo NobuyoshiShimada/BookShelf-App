@@ -19,7 +19,7 @@ class ReadingPlanController extends Controller
     use AuthorizesRequests;
 
     /**
-     * 読書計画一覧画面の表示（ステータス絞り込み ＆ 日付・Enumトランスフォーム対応）
+     * 読書計画一覧画面の表示
      *
      * @param  Request  $request  ステータスフィルタ（status）を含むリクエスト
      * @return View 読書計画一覧画面のビュー
@@ -35,13 +35,8 @@ class ReadingPlanController extends Controller
             })
             ->latest('target_date')
             ->get()
-            ->transform(function (ReadingPlan $plan) {
-                $plan->status = is_string($plan->status) ? ReadingPlanStatus::tryFrom($plan->status) : $plan->status;
-                $plan->target_date = is_string($plan->target_date) ? Carbon::parse($plan->target_date) : $plan->target_date;
-                $plan->completed_at = is_string($plan->completed_at) ? Carbon::parse($plan->completed_at) : $plan->completed_at;
-
-                return $plan;
-            });
+            // modelのメソッドcastAttributesToEntities()
+            ->map(fn(ReadingPlan $plan) => $plan->castAttributesToEntities());
 
         return view('reading-plans.index', compact('readingPlans', 'currentStatus'));
     }

@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
+use Psy\TabCompletion\Matcher\FunctionsMatcher;
 
 class Book extends Model
 {
@@ -87,4 +90,55 @@ class Book extends Model
     {
         return $this->hasMany(ReadingPlan::class);
     }
+
+    /**
+     * ジャンル紐付けを内包した安全な一括作成処理
+     *
+     * @param array<string, mixed> $attributes 書籍の属性配列
+     * @param array<int, int> $genreIds 紐付けるジャンルIDの配列
+     * @return self 生成された書籍モデルインスタンス
+     */
+    public static function createWithGenres(array $attributes, array $genreIds): self
+    {
+        return DB::transaction(function () use ($attributes, $genreIds) {
+            $book = self::create($attributes);
+            collect($genreIds)->whenNotEmpty(fn ($ids) => $book->genres()->sync($ids));
+            return $book;
+        });
+    }
+
+    /**
+     * ジャンル再同期を内包した安全な一括更新処理
+     *
+     * @param array<string, mixed> $attributes 更新する属性配列
+     * @param array<int, int> $genreIds 再同期するジャンルIDの配列
+     * @return bool 更新成否のステータス
+     */
+    public function updateWithGenres(array $attributes, ?array $genreIds): bool
+    {
+        return DB::transaction(function () use ($attributes, $genreIds) {
+            $updated = $this->update($attributes);
+            if ($genreIds !== null) {
+                $this->genres()->sync($genreIds);
+            }
+            return $updated;
+        });
+    }
+
+    /**
+     * データベースから書籍と紐づくすべての子孫データをトランザクション内で完全抹消
+     *
+     * @return void
+     * @throws \Throwable トランザクション内でエラーが発生した場合
+     */
+    public Function purgeFully(): void
+    {
+        DB::transaction(function () {
+            $this->genres()->sync([]);
+            $this->reviews()->delete();
+            $this->delete();
+        });
+    }
+
+
 }
