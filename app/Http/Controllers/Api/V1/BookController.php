@@ -23,27 +23,11 @@ class BookController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $books = Book::withAvg('reviews', 'rating')
-            ->when($request->filled('keyword'), function ($query) use ($request) {
-                $keyword = '%' . $request->input('keyword') . '%';
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('title', 'like', $keyword)
-                    ->orWhere('author', 'like', $keyword);
-                });
-            })
-        ->when($request->input('sort', 'newest'), function ($query, $sort) {
-                match ($sort) {
-                    'oldest' => $query->oldest(),
-                    'rating' => $query->orderBy('reviews_avg_rating', 'desc')->latest(),
-                    'title'  => $query->orderBy('title', 'asc'),
-                    default  => $query->latest(),
-                };
-            })
-            ->with(['genres'])
-            ->latest()
+        $books = Book::filterAndSort($request->only(['keyword', 'genre', 'sort']))
             ->paginate(
                 min((int) $request->input('per_page', 10), 100)
             );
+
         return BookResource::collection($books);
     }
 

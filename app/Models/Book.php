@@ -92,6 +92,39 @@ class Book extends Model
     }
 
     /**
+     * 💡 コントローラーから移譲された検索・フィルタ・ソート共通ローカルスコープ
+     *
+     * @param  Builder  $query  クエリビルダ
+     * @param  array<string, mixed>  $filters  キーワード、ジャンル、ソートキーを含む連想配列
+     * @return Builder 構築されたクエリビルダ
+     */
+    public function scopeFilterAndSort(Builder $query, array $filters): Builder
+    {
+        return $query->withAvg('reviews', 'rating')
+            ->with(['genres'])
+            ->when(!empty($filters['keyword']), function ($query) use ($filters) {
+                $keyword = '%' . $filters['keyword'] . '%';
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('title', 'like', $keyword)
+                      ->orWhere('author', 'like', $keyword);
+                });
+            })
+            ->when(!empty($filters['genre']), function ($query) use ($filters) {
+                $query->whereHas('genres', function ($q) use ($filters) {
+                    $q->where('genres.id', $filters['genre']);
+                });
+            })
+            ->when($filters['sort'] ?? 'newest', function ($query, $sort) {
+                match ($sort) {
+                    'oldest' => $query->oldest(),
+                    'rating' => $query->orderBy('reviews_avg_rating', 'desc')->latest(),
+                    'title'  => $query->orderBy('title', 'asc'),
+                    default  => $query->latest(),
+                };
+            });
+    }
+
+    /**
      * ジャンル紐付けを内包した安全な一括作成処理
      *
      * @param array<string, mixed> $attributes 書籍の属性配列

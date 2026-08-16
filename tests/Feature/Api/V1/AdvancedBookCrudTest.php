@@ -14,7 +14,6 @@ class AdvancedBookCrudTest extends TestCase
     use RefreshDatabase;
 
     private User $ownerUser;
-
     private User $otherUser;
 
     protected function setUp(): void

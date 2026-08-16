@@ -17,11 +17,8 @@ class AdvancedReadingPlanTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
-
     private User $otherUser;
-
     private Book $book1;
-
     private Book $book2;
 
     protected function setUp(): void
@@ -205,7 +202,17 @@ class AdvancedReadingPlanTest extends TestCase
             ->assertDontSee('Laravel実践')
             ->assertDontSee('PHP問題集')
             ->assertDontSee('読了済みの本');
-    }
+
+        // ④ 期日超過
+        $response = $this->actingAs($this->user)->get(route('reading-plans.index', [
+            'status' => 'overdue',
+        ]));
+        $response->assertStatus(200)
+            ->assertSee('期日超過の本')
+            ->assertDontSee('Laravel実践')
+            ->assertDontSee('PHP問題集')
+            ->assertDontSee('読了済みの本');
+        }
 
     public function test_読書計画の新規登録画面の表示と、登録処理(): void
     {

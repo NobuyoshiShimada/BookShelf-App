@@ -25,7 +25,7 @@ class ReviewTest extends TestCase
         $this->book = Book::factory()->create();
     }
 
-    public function test_未ログインユーザーのアクセス制限()
+    public function test_未ログインユーザーのアクセス制限(): void
     {
         $review = Review::factory()->create(['book_id' => $this->book->id]);
 

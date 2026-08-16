@@ -25,32 +25,11 @@ class BookController extends Controller
      * @param \Illuminate\Http\Request $request 検索キーワード、ジャンルID、ソートキーを含むリクエスト
      * @return \Illuminate\View\View 書籍一覧画面のビュー
      */
- public function index(Request $request): View
+    public function index(Request $request): View
     {
         $genres = Genre::all();
 
-        $books = Book::withAvg('reviews', 'rating')
-            ->when($request->filled('keyword'), function ($query) use ($request) {
-                $keyword = '%' . $request->input('keyword') . '%';
-                $query->where(function ($q) use ($keyword){
-                    $q->where('title', 'like', $keyword)
-                      ->orWhere('author', 'like', $keyword);
-                });
-            })
-            ->when($request->filled('genre'), function ($query) use ($request) {
-                $query->whereHas('genres', function ($q) use ($request) {
-                    $q->where('genres.id', $request->input('genre'));
-                });
-            })
-            ->when($request->input('sort', 'newest'), function ($query, $sort){
-                match ($sort) {
-                    'oldest' => $query->oldest(),
-                    'rating' => $query->orderBy('reviews_avg_rating', 'desc')->latest(),
-                    'title'  => $query->orderBy('title', 'asc'),
-                    default  => $query->latest(),
-                };
-            })
-            ->with(['genres'])
+        $books = Book::filterAndSort($request->only(['keyword', 'genre', 'sort']))
             ->paginate(10)
             ->appends($request->query());
 

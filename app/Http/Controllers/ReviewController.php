@@ -25,10 +25,17 @@ class ReviewController extends Controller
      */
     public function store(ReviewRequest $request, Book $book): RedirectResponse
     {
+        $userId = Auth::id();
         $validated = $request->validated();
 
+        $alreadyReviewed = $book->reviews()->where("user_id", $userId)->exists();
+
+        if ($alreadyReviewed) {
+            return redirect()->route("books.show", $book)
+            ->with("error", "この書籍にはすでにレビューが投稿済みです。1冊につき1件まで投稿できます。");
+        }
         $book->reviews()->create([
-            'user_id' => Auth::id(),
+            'user_id' => $userId,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
         ]);
@@ -99,7 +106,7 @@ class ReviewController extends Controller
      * @return \Illuminate\Http\RedirectResponse 直前の画面へのリダイレクトレスポンス
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException 対象のレビューが存在しない場合
      */
-    public function toggle(string $id)
+    public function toggle(string $id): RedirectResponse
     {
         $review = Review::findOrFail($id);
 
@@ -108,6 +115,10 @@ class ReviewController extends Controller
 
         $user->toggleLikeReview($review->id);
 
-        return back();
+        $message = $review->fresh()->isLikedBy($user)
+            ? "レビューにいいね！を追加しました。"
+            : "レビューのいいね！を解除しました。";
+
+        return back()->with("success", $message);
     }
 }
