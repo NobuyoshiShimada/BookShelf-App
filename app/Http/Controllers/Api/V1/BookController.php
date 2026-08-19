@@ -7,137 +7,98 @@ use App\Http\Requests\Api\V1\StoreBookRequest;
 use App\Http\Requests\Api\V1\UpdateBookRequest;
 use App\Http\Resources\Api\V1\BookResource;
 use App\Models\Book;
-use illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Auth;
 
 class BookController extends Controller
 {
-    // private const GUEST_USER_ID = 999;
-
-    public function index(Request $request)
+    /**
+     * 書籍一覧データの取得 (API仕様: ページネーション ＆ 動的検索対応)
+     *     *
+     * @param  Request  $request  キーワード、ジャンルID、表示件数を含むリクエストオブジェクト
+     * @return AnonymousResourceCollection ページネーション付き書籍リソースのコレクション
+     */
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Book::with('genres')
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating');
-
-        if ($request->filled('keyword')) {
-            $keyword = '%'.$request->input('keyword').'%';
-            $query->where(function ($q) use ($keyword) {
-                $q->where('title', 'like', $keyword)
-                    ->orWhere('author', 'like', $keyword)
-                    ->orWhere('description', 'like', $keyword)
-                    ->orWhere('isbn', 'like', $keyword);
-            });
-        }
-
-        if ($request->filled('genre_id')) {
-            $genreId = $request->input('genre_id');
-            $query->whereHas('genres', function ($q) use ($genreId) {
-                $q->where('genres.id', $genreId);
-            });
-        }
-
-        $perPage = (int) $request->input('per_page', 10);
-        $perPage = min($perPage, 100);
-        $books = $query->latest()->paginate($perPage);
+        $books = Book::filterAndSort($request->only(['keyword', 'genre', 'sort']))
+            ->paginate(
+                min((int) $request->input('per_page', 10), 100)
+            );
 
         return BookResource::collection($books);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * 新しい書籍データの認証登録処理
+     *
+     * リクエスト内からの user_id 改ざんを徹底防衛。
+     * トークン認証された本人のID (Auth::id()) をサーバー側で強制割り当てします。
+     *
+     * @param  StoreBookRequest  $request  バリデーションルールを通過した書籍登録データ
+     * @return JsonResponse ステータスコード 201 Created を内包するレスポンス
      */
-    // 書籍新規登録
-    public function store(StoreBookRequest $request)
+    public function store(StoreBookRequest $request): JsonResponse
     {
-        $validated = $request->validated();
+        $book = Book::createWithGenres(
+            array_merge($request->validated(), ['user_id' => Auth::id()]),
+            $request->input('genres', [])
+        );
 
-        $book = Book::create([
-            // 認証不要用の固定ユーザーID割り当て
-            'user_id' => Auth::id(),
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-        ]);
-
-        if ($request->has('genres')) {
-            $book->genres()->sync($request->genres);
-        }
-
-        return (new BookResource($book->load('genres')))
+        return (new BookResource($book->loadMissing('genres')))
             ->response()
             ->setStatusCode(201);
     }
 
     /**
-     * Display the specified resource.
+     * 特定の書籍の検索・詳細情報取得
+     *
+     * @param  Book  $book  ルートモデルバインディングによって自動引き直しされた書籍モデル
+     * @return BookResource 単一書籍の詳細APIリソース
      */
-    // 書籍詳細
-    public function show(Book $book)
+    public function show(Book $book): BookResource
     {
-        $book->load(['genres', 'user', 'reviews' => function ($query) {
-            $query->with('user')->withCount('likedByUsers');
-        }]);
-
-        $book->loadCount('reviews');
-        $book->loadAvg('reviews', 'rating');
+        $book->loadMissing([
+            'genres',
+            'user',
+            'reviews.user',
+        ])->loadCount('reviews')->loadAvg('reviews', 'rating');
 
         return new BookResource($book);
     }
 
     /**
-     * Update the specified resource in storage.
+     * 既存書籍情報の認証更新処理 (所有者限定ガード付き)
+     *
+     * @param  UpdateBookRequest  $request  バリデーションルールを通過した更新データ
+     * @param  Book  $book  操作対象の書籍モデル
+     * @return BookResource|JsonResponse 更新成功時はリソース、認可失敗時は403 JSON
      */
-    // 書籍更新
-    public function update(UpdateBookRequest $request, Book $book)
+    public function update(UpdateBookRequest $request, Book $book): BookResource
     {
-        try {
-            $this->authorize('update', $book);
-        } catch (AuthorizationException $e) {
-            return response()->json([
-                'message' => '自分が登録した書籍情報のみ更新できます。',
-            ], 403);
-        }
+        $this->authorize('update', $book);
 
-        $validated = $request->validated();
+        $book->updateWithGenres(
+            $request->validated(),
+            $request->has('genres') ? $request->input('genres') : null
+        );
 
-        $book->update([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-        ]);
-
-        if ($request->has('genres')) {
-            $book->genres()->sync($request->genres);
-        }
-
-        return new BookResource($book->load('genres'));
+        return new BookResource($book->loadMissing('genres'));
     }
 
     /**
-     * Remove the specified resource from storage.
+     * 書籍データの完全削除処理 (所有者限定ガード付き)
+     *
+     * @param  Book  $book  操作対象の書籍モデル
+     * @return JsonResponse 削除完了メッセージ、または認可失敗時は403 JSON
      */
-    // 書籍削除
-    public function destroy(Book $book)
+    public function destroy(Book $book): JsonResponse
     {
-        try {
-            $this->authorize('delete', $book);
-        } catch (AuthorizationException $e) {
-            return response()->json([
-                'message' => '自分が登録した書籍のみ削除できます。',
-            ], 403);
-        }
+        $this->authorize('delete', $book);
 
-        $book->genres()->sync([]);
-        $book->reviews()->delete();
-        $book->delete();
+        $book->purgeFully();
 
         return response()->json([
             'message' => '書籍情報を削除しました。',

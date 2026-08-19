@@ -14,7 +14,6 @@ class AdvancedBookCrudTest extends TestCase
     use RefreshDatabase;
 
     private User $ownerUser;
-
     private User $otherUser;
 
     protected function setUp(): void
@@ -193,6 +192,6 @@ class AdvancedBookCrudTest extends TestCase
 
         // 💡 期待値: 422 が返り、エラーメッセージが含まれていること
         $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['title', 'published_date']);
+            ->assertJsonValidationErrors(['title', 'published_date']);
     }
 }

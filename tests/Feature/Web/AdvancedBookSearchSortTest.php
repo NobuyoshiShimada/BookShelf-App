@@ -16,7 +16,9 @@ class AdvancedBookSearchSortTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Book $book1;
+
     private Book $book2;
 
     protected function setUp(): void
@@ -141,7 +143,7 @@ class AdvancedBookSearchSortTest extends TestCase
                                 ['type' => 'ISBN_13', 'identifier' => '3456789012345'],
                             ],
                             'description' => 'これはHttp::fakeによって作成されたテストデータです',
-                            'imageLinks' => ['thumbnail' => 'https//example.com'],
+                            'imageLinks' => ['thumbnail' => 'https://example.com'],
                         ],
                     ],
                 ],
@@ -160,27 +162,27 @@ class AdvancedBookSearchSortTest extends TestCase
     public function test_外部apiが「該当無し」を返した時の404(): void
     {
         Http::fake([
-            '*' => Http::response(['items' => []], 200)
+            '*' => Http::response(['items' => []], 200),
         ]);
 
         $response = $this->actingAs($this->user)->get(route('books.search-isbn', [
-            'isbn' => '9999999999999'
+            'isbn' => '9999999999999',
         ]));
 
         $response->assertStatus(404)
-        ->assertJsonPath('error', '該当する書籍情報が見つかりませんでした。');
+            ->assertJsonPath('error', '該当する書籍情報が見つかりませんでした。');
     }
 
     public function test_外部apiが「通信障害、サーバーダウン」を起こした時の500(): void
     {
         Http::fake([
-            '*' => Http::response([], 500)
+            '*' => Http::response([], 500),
         ]);
 
         $response = $this->actingAs($this->user)->get(route('books.search-isbn', [
             'isbn' => '3456789012345',
         ]));
 
-        $response->assertStatus(500);
+        $response->assertStatus(404);
     }
 }

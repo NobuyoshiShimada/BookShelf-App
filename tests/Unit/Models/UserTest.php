@@ -14,7 +14,7 @@ class UserTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * A basic unit test example.
+     *
      */
     // ユーザーが複数の書籍を登録できるかテスト（1対多）
     public function test_user_has_many_books(): void
@@ -73,5 +73,38 @@ class UserTest extends TestCase
         // いいねしたレビューが2件正しく引き抜けるかテスト
         $this->assertCount(2, $user->likedReviews);
         $this->assertInstanceOf(Review::class, $user->likedReviews->first());
+    }
+
+    /**
+     * toggleLikeReview メソッドのスイッチ判定テスト
+     *
+     * 「未登録なら新規登録（いいねON）」「登録済みなら即時解除（いいねOFF）」を狂いなく実行できるか単体アサートします。
+     */
+    public function test_toggleLikeReviewメソッドによって対象レビューへのいいね状態が正しく反転スイッチする(): void
+    {
+        $user = User::factory()->create();
+        $review = Review::factory()->create();
+
+        // 1回目：未いいね状態からトグルを実行 ➔ 【いいね登録（ON）】
+        $user->toggleLikeReview($review->id);
+
+        // データベースにユーザーとレビューの紐付けが存在することを確認
+        $this->assertDatabaseHas('review_likes', [
+            'user_id'   => $user->id,
+            'review_id' => $review->id,
+        ]);
+        // ユーザーに紐づくいいねレビュー一覧に、このレビューが含まれているか検証
+        $this->assertTrue($user->likedReviews()->where('review_id', $review->id)->exists());
+
+        // 2回目：すでにいいねしている状態から再度トグルを実行 ➔ 【いいね解除（OFF）】
+        $user->toggleLikeReview($review->id);
+
+        // データベースから紐付けレコードが安全に消去されているか確認
+        $this->assertDatabaseMissing('review_likes', [
+            'user_id'   => $user->id,
+            'review_id' => $review->id,
+        ]);
+        // いいね一覧から完全に消滅しているか検証
+        $this->assertFalse($user->likedReviews()->where('review_id', $review->id)->exists());
     }
 }

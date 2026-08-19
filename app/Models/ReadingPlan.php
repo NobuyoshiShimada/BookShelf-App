@@ -5,11 +5,17 @@ namespace App\Models;
 use App\Enums\ReadingPlanStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReadingPlan extends Model
 {
     use HasFactory;
 
+    /**
+     * 複数代入（Mass Assignment）を許可する属性の配列
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'user_id',
         'book_id',
@@ -18,22 +24,48 @@ class ReadingPlan extends Model
         'completed_at',
     ];
 
-    // カラムとEnumオブジェクトのキャストの紐付ける
+    /**
+     * 適切なデータ型やEnumオブジェクトへ強制変換（キャスト）する属性の配列
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'status' => ReadingPlanStatus::class,
         'target_date' => 'date',
         'completed_at' => 'date',
     ];
 
-    // 計画を立てたユーザー
-    public function user()
+    /**
+     * この読書計画を策定した親ユーザーへの多対1リレーション
+     *
+     * @return BelongsTo ユーザーモデルへの紐付け
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // 対象の書籍
-    public function book()
+    /**
+     * この読書計画の対象となっている書籍への多対1リレーション
+     *
+     * @return BelongsTo 書籍モデルへの紐付け
+     */
+    public function book(): BelongsTo
     {
         return $this->belongsTo(Book::class);
+    }
+
+    /**
+     * 自身の未変換カラム（文字列）をEnumおよびCarbonインスタンスへ安全に変換
+     *
+     * @return $this
+     */
+    public function castAttributesToEntities(): self
+    {
+        $this->status = is_string($this->status) ? \App\Enums\ReadingPlanStatus::tryFrom($this->status) : $this->status;
+        $this->target_date = is_string($this->target_date) ? \Illuminate\Support\Carbon::parse($this->target_date) : $this->target_date;
+        $this->completed_at = is_string($this->completed_at) ? \Illuminate\Support\Carbon::parse($this->completed_at) : $this->completed_at;
+
+        return $this;
     }
 }

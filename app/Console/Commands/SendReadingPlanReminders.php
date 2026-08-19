@@ -12,23 +12,25 @@ use Illuminate\Support\Facades\Notification;
 class SendReadingPlanReminders extends Command
 {
     /**
-     * The name and signature of the console command.
+     * コンソールコマンドの識別シグネチャ（Artisan命令名）
      *
      * @var string
      */
     protected $signature = 'app:send-reading-plan-reminders';
 
     /**
-     * The console command description.
+     * コンソールコマンドの機能概要説明
      *
      * @var string
      */
     protected $description = '読書計画の期日判定（3日前、当日、3日後超過）期日を過ぎた計画の自動状態遷移を行います。';
 
     /**
-     * Execute the console command.
+     * 登録されたタスクスケジュールから自動実行されるバッチ処理のメインロジック
+     *
+     * @return int コマンドの終了ステータスコード（正常終了時は 0）
      */
-    public function handle()
+    public function handle(): int
     {
         $today = Carbon::today();
 
@@ -65,15 +67,15 @@ class SendReadingPlanReminders extends Command
             if ($daysDifference === 3) {
                 $timing = 'three_days_before';
                 $title = '読書期日が近づいています。';
-                $body = '「{$plan->book->title}」の読書期日まであと3日です。';
+                $body = "「{$plan->book->title}」の読書期日まであと3日です。";
             } elseif ($daysDifference === 0) {
                 $timing = 'on_due_date';
                 $title = '読書計画の期日当日です。';
-                $body = '「{$plan->book->title}」の読書期日当日です。';
+                $body = "「{$plan->book->title}」の読書期日当日です。";
             } elseif ($daysDifference < 0) {
                 $timing = 'three_days_after';
                 $title = '読書期日が3日過ぎています。';
-                $body = '「{$plan->book->title}」の読書期日から3日が経過しました。';
+                $body = "「{$plan->book->title}」の読書期日から3日が経過しました。";
             }
 
             if ($timing) {
@@ -86,5 +88,6 @@ class SendReadingPlanReminders extends Command
         $this->info("・自動配信された通知: {$notificationCount} 件");
         $this->info("・期限超過に遷移した計画: {$statusUpdateCount} 件");
 
+        return 0;
     }
 }

@@ -14,31 +14,14 @@ cd bookshelf-app
 ```
 
 ---
-**Laravel sailをインストール**
----
-3. Laravel Sailをインストール
-```bash
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer require laravel/sail --dev
-```
-4. sailの設定ファイルを生成する（MySQLを選択）
-```bash
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest php artisan sail:install --with=mysql`
-```
-> *MacのM1・M2チップのPCの場合、`no matching manifest for linux/arm64/v8 in the manifest list entries`のメッセージが表示されビルドができないことがあります。
-エラーが発生する場合は、docker-compose.ymlファイルの「mysql」内に「platform」の項目を追加で記載してください*
-
-``` bash
-mysql:
-    platform: linux/x86_64(←この文を追加)
-    image: mysql:8.0.26
-    environment:
-```
-
----
 **.envファイルの設定**
 ---
+3. .envファイルを作成する
+```bash
+cp .env.example .env
+```
 
-5. .env ファイルを開き、データベース接続情報が以下と一致していることを確認します。
+4. .env ファイルを開き、データベース接続情報が以下と一致していることを確認します。
 ```bash
 DB_CONNECTION=mysql
 DB_HOST=mysql
@@ -50,34 +33,84 @@ DB_PASSWORD=password
 **重要**: DB_HOST は localhost や 127.0.0.1 ではなく、Dockerコンテナ名である **mysql** を指定します。
 
 ---
+**Laravel sailをインストール**
+---
+5. Laravel Sailをインストール
+```bash
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer require laravel/sail --dev
+```
+
+6. sailの設定ファイルを生成する（MySQLを選択）
+```bash
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest php artisan sail:install --with=mysql
+```
+> *MacのM1・M2チップのPCの場合、no matching manifest for linux/arm64/v8 in the manifest list entriesのメッセージが表示されビルドができないことがあります。 エラーが発生する場合は、docker-compose.ymlファイルの「mysql」内に「platform」の項目を追加で記載してください*
+
+``` bash
+mysql:
+    platform: linux/x86_64(←この文を追加)
+    image: mysql:8.0.26
+    environment:
+```
+
+**Sailの起動とエイリアス設定**
+---
+7. Sailをバックグラウンドで起動
+```bash
+./vendor/bin/sail up -d
+```
+
+8.  エイリアスを設定して 'sail' だけでコマンドを実行できるようにする
+```bash
+echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.zshrc
+```
+
+9. シェルを再起動するか、新しいターミナルを開いてエイリアスを有効にする
+```bash
+exec $SHELL
+```
+
+10. アプリケーションキーの作成
+``` bash
+sail artisan key:generate
+```
+
+11. マイグレーションの実行
+``` bash
+sail artisan migrate --seed
+```
+> ※既存のデータベースをリセットしたい場合は以下を実行してください。
+**`sail artisan migrate:fresh --seed`**
+
+---
 **フロントエンドのセットアップ（Vite & Tailwind CSS）**
 ---
 > 本プロジェクトでは、フロントエンドのスタイリングにTailwind CSSを使用します。
 以下の手順でセットアップを行ってください。
 
-6. NPM依存パッケージのインストール
+12. NPM依存パッケージのインストール
 ```bash
 sail npm install
 ```
 ※Sailコンテナが起動していることを確認。起動していない場合は ./vendor/bin/sail up -d を実行
 
-7. Alpine.jsのインストール
+13. Alpine.jsのインストール
 ```bash
 sail npm install alpinejs
 ```
 
-8. Tailwind CSSと @tailwindcss/forms プラグインのインストール
+14. Tailwind CSSと @tailwindcss/forms プラグインのインストール
 ```bash
 sail npm install -D tailwindcss@^3.4.0 @tailwindcss/forms postcss autoprefixer
 ```
 ※ @tailwindcss/forms はフォーム要素のスタイルをリセットするLaravel標準プラグインです。
 
-9. 設定ファイルの生成
+15. 設定ファイルの生成
 ```bash
 sail npx tailwindcss init -p
 ```
 
-10. Tailwind CSSのテンプレートパス設定とforms プラグインの有効化
+16. Tailwind CSSのテンプレートパス設定とforms プラグインの有効化
 tailwind.config.js を以下の内容で上書きしてください：
 ```
 import defaultTheme from 'tailwindcss/defaultTheme';
@@ -98,35 +131,17 @@ export default {
         },
     },
     plugins: [forms],
-};`
+};
 ```
 
-11. Vite開発サーバーの起動
+17. Vite開発サーバーの起動
 ```bash
 sail npm run dev
 ```
 注意: 開発中は常にこのコマンドを実行した状態にしておいてください。
 
 ---
-**phpMyAdminの追加**
----
-12. compose.yaml を開き、mysql サービスの後に以下の設定を追加してください。
-```bash
-phpmyadmin:
-    image: 'phpmyadmin:latest'
-    ports:
-        - '${FORWARD_PHPMYADMIN_PORT:-8080}:80'
-    environment:
-        PMA_HOST: mysql
-        PMA_USER: '${DB_USERNAME}'
-        PMA_PASSWORD: '${DB_PASSWORD}'
-    networks:
-        - sail
-    depends_on:
-        - mysql
-```
----
-**Google Books API キーの設定（ISBN自動入力用）**
+** Google Books API キーの設定（ISBN自動入力用）**
 ---
 書籍登録画面でISBNから書籍情報を自動補完する機能を利用するには、Google Books APIのアクセスキーが必要です。設定を行わない場合、回数制限エラー（429 Too Many Requests）が発生することがあります。
 
@@ -141,9 +156,7 @@ phpmyadmin:
 ### 2. プロジェクトへの反映方法
 
 - プロジェクト直下の `.env` ファイルを開き、最下部にコピーしたAPIキーを追記してください。
-
 ```env
-# Google Books API 設定
 GOOGLE_BOOKS_API_KEY=YourActualAPIKeyHere...
 ```
 
@@ -156,35 +169,6 @@ sail artisan optimize:clear
 > 💡 **注意**: `.env` ファイルはGitの管理対象外（`.gitignore` に登録済み）となっているため、取得した秘密のAPIキーが外部（GitHub等）に公開される心配はありません。
 
 ---
-**Sailの起動とエイリアス設定**
----
-13. Sailをバックグラウンドで起動
-```bash
-./vendor/bin/sail up -d
-```
-
-14.  エイリアスを設定して 'sail' だけでコマンドを実行できるようにする
-```bash
-echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.zshrc
-```
-
-15. シェルを再起動するか、新しいターミナルを開いてエイリアスを有効にする
-```bash
-exec $SHELL
-```
-
-16. アプリケーションキーの作成
-``` bash
-sail artisan key:generate
-```
-
-17. マイグレーションの実行
-``` bash
-sail artisan migrate --seed
-```
-> ※既存のデータベースをリセットしたい場合は以下を実行してください。
-**`sail artisan migrate:fresh --seed`**
-
 ---
 ## 使用技術(実行環境)
 - **OS** : macOS Sequoia 15.6
@@ -204,12 +188,10 @@ sail artisan migrate --seed
 ---
 ## 作成者
 島田 延佳
-
 ( Nobuyoshi Shimada )
 
 ---
 ## テーブル仕様
-
 
 ### 1. users テーブル（ユーザー管理）
 

@@ -10,13 +10,14 @@ use Tests\TestCase;
 class FavoriteTest extends TestCase
 {
     use RefreshDatabase;
-
+    
     private User $user;
 
     protected function setUp(): void
     {
         // テスト用のユーザーを作成
         parent::setUp();
+
         $this->user = User::factory()->create();
     }
 

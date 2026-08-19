@@ -10,7 +10,9 @@ use Override;
 class ReviewRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * リクエストを実行するユーザーのログイン認証権限チェック
+     *
+     * @return bool 認証済みで実行を許可する場合は true、未認証は false
      */
     public function authorize(): bool
     {
@@ -18,9 +20,13 @@ class ReviewRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * レビューの投稿・更新時における各入力項目のバリデーションルール定義
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * バリデーション仕様:
+     * 評価点数（rating）は1〜5の整数、コメント本文（comment）は必須で最大1000文字までに制限します。
+     * 改ざんを防ぐため、user_id や book_id のルールはここには含めません。
+     *
+     * @return array<string, ValidationRule|array<mixed>|string> バリデーションルールの配列
      */
     public function rules(): array
     {
@@ -30,6 +36,11 @@ class ReviewRequest extends FormRequest
         ];
     }
 
+    /**
+     * バリデーションエラー発生時に画面へ返却するカスタム日本語メッセージの定義
+     *
+     * @return array<string, string> 属性名とエラー規則に対応するエラーメッセージの配列
+     */
     #[Override]
     public function messages(): array
     {

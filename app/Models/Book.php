@@ -4,11 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
+use Psy\TabCompletion\Matcher\FunctionsMatcher;
 
 class Book extends Model
 {
     use HasFactory;
 
+    /**
+     * 複数代入（Mass Assignment）を許可する属性の配列
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'user_id',
         'title',
@@ -19,42 +30,148 @@ class Book extends Model
         'image_url',
     ];
 
+    /**
+     * 適切なデータ型へ強制変換（キャスト）する属性の配列
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'published_date' => 'date',
     ];
 
-    // この本を登録したユーザー(多対1)
-    public function user()
+    /**
+     * この書籍データをデータベースに登録した親ユーザーへの多対1リレーション
+     *
+     * @return BelongsTo ユーザーモデルへの紐付け
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // この本に投稿されたレビュー(1対多)
-
-    public function reviews()
+    /**
+     * この書籍に対して投稿された全ユーザーからのレビュー一覧への1対多リレーション
+     *
+     * @return HasMany レビューコレクションへの紐付け
+     */
+    public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
 
-    // この本に紐づいているジャンル一覧(多対多)
-    // 中間テーブル: book_genre
-    // $book->genres()でアクセス可能
-    public function genres()
+    /**
+     * この書籍に割り当てられているジャンル一覧への多対多リレーション
+     * （中間テーブル: `book_genre`）
+     *
+     * @return BelongsToMany ジャンルコレクションへの紐付け
+     */
+    public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class, 'book_genre')->withTimestamps();
     }
 
-    // この本をお気に入り登録しているユーザー一覧(多対多)
-    // 中間テーブル: favorites
-    // $book->favoriteBooks()でアクセス可能
-    public function favoriteBooks()
+    /**
+     * この書籍をお気に入り登録しているユーザー一覧への多対多リレーション
+     * （中間テーブル: `favorites`）
+     *
+     * @return BelongsToMany ユーザーコレクションへの紐付け
+     */
+    public function favoriteBooks(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
     }
 
-    // 読書計画の対象書籍
-    public function readingPlans()
+    /**
+     * この書籍を対象として作成された全ユーザーの読書計画一覧への1対多リレーション
+     *
+     * @return HasMany 読書計画コレクションへの紐付け
+     */
+    public function readingPlans(): HasMany
     {
         return $this->hasMany(ReadingPlan::class);
     }
+
+    /**
+     * 💡 コントローラーから移譲された検索・フィルタ・ソート共通ローカルスコープ
+     *
+     * @param  Builder  $query  クエリビルダ
+     * @param  array<string, mixed>  $filters  キーワード、ジャンル、ソートキーを含む連想配列
+     * @return Builder 構築されたクエリビルダ
+     */
+    public function scopeFilterAndSort(Builder $query, array $filters): Builder
+    {
+        return $query->withAvg('reviews', 'rating')
+            ->with(['genres'])
+            ->when(!empty($filters['keyword']), function ($query) use ($filters) {
+                $keyword = '%' . $filters['keyword'] . '%';
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('title', 'like', $keyword)
+                      ->orWhere('author', 'like', $keyword);
+                });
+            })
+            ->when(!empty($filters['genre']), function ($query) use ($filters) {
+                $query->whereHas('genres', function ($q) use ($filters) {
+                    $q->where('genres.id', $filters['genre']);
+                });
+            })
+            ->when($filters['sort'] ?? 'newest', function ($query, $sort) {
+                match ($sort) {
+                    'oldest' => $query->oldest(),
+                    'rating' => $query->orderBy('reviews_avg_rating', 'desc')->latest(),
+                    'title'  => $query->orderBy('title', 'asc'),
+                    default  => $query->latest(),
+                };
+            });
+    }
+
+    /**
+     * ジャンル紐付けを内包した安全な一括作成処理
+     *
+     * @param array<string, mixed> $attributes 書籍の属性配列
+     * @param array<int, int> $genreIds 紐付けるジャンルIDの配列
+     * @return self 生成された書籍モデルインスタンス
+     */
+    public static function createWithGenres(array $attributes, array $genreIds): self
+    {
+        return DB::transaction(function () use ($attributes, $genreIds) {
+            $book = self::create($attributes);
+            collect($genreIds)->whenNotEmpty(fn ($ids) => $book->genres()->sync($ids));
+            return $book;
+        });
+    }
+
+    /**
+     * ジャンル再同期を内包した安全な一括更新処理
+     *
+     * @param array<string, mixed> $attributes 更新する属性配列
+     * @param array<int, int> $genreIds 再同期するジャンルIDの配列
+     * @return bool 更新成否のステータス
+     */
+    public function updateWithGenres(array $attributes, ?array $genreIds): bool
+    {
+        return DB::transaction(function () use ($attributes, $genreIds) {
+            $updated = $this->update($attributes);
+            if ($genreIds !== null) {
+                $this->genres()->sync($genreIds);
+            }
+            return $updated;
+        });
+    }
+
+    /**
+     * データベースから書籍と紐づくすべての子孫データをトランザクション内で完全抹消
+     *
+     * @return void
+     * @throws \Throwable トランザクション内でエラーが発生した場合
+     */
+    public Function purgeFully(): void
+    {
+        DB::transaction(function () {
+            $this->genres()->sync([]);
+            $this->reviews()->delete();
+            $this->delete();
+        });
+    }
+
+
 }
