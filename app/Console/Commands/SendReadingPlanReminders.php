@@ -38,11 +38,17 @@ class SendReadingPlanReminders extends Command
             ->where('status', '!=', ReadingPlanStatus::Completed->value)
             ->get();
 
+        $notificationGroups = [
+            '3日前' => ['users' => collect(), 'plans' => collect()],
+            '当日'  => ['users' => collect(), 'plans' => collect()],
+            '3日後' => ['users' => collect(), 'plans' => collect()],
+        ];
+
         $notificationCount = 0;
         $statusUpdateCount = 0;
 
         foreach ($plans as $plan) {
-            if (! $plan->user || ! $plan->book) {
+            if (!$plan->user || !$plan->book) {
                 continue;
             }
 
@@ -60,26 +66,38 @@ class SendReadingPlanReminders extends Command
             }
 
             // リマインダー通知の自動配信
-            $timing = null;
-            $title = '';
-            $body = '';
-
             if ($daysDifference === 3) {
-                $timing = 'three_days_before';
-                $title = '読書期日が近づいています。';
-                $body = "「{$plan->book->title}」の読書期日まであと3日です。";
+                $notificationGroups['3日前']['users']->push($plan->user);
+                $notificationGroups['3日前']['plans']->push($plan);
             } elseif ($daysDifference === 0) {
-                $timing = 'on_due_date';
-                $title = '読書計画の期日当日です。';
-                $body = "「{$plan->book->title}」の読書期日当日です。";
-            } elseif ($daysDifference < 0) {
-                $timing = 'three_days_after';
-                $title = '読書期日が3日過ぎています。';
-                $body = "「{$plan->book->title}」の読書期日から3日が経過しました。";
+                $notificationGroups['当日']['users']->push($plan->user);
+                $notificationGroups['当日']['plans']->push($plan);
+            } elseif ($daysDifference === -3) {
+                $notificationGroups['3日後']['users']->push($plan->user);
+                $notificationGroups['3日後']['plans']->push($plan);
+            }
+        }
+
+        foreach ($notificationGroups as $timing => $data) {
+            if ($data['users']->isEmpty()) {
+                continue;
             }
 
-            if ($timing) {
-                Notification::send($plan->user, new ReadingPlanReminder($plan, $timing, $title, $body));
+
+            $title = match ($timing) {
+                '3日前' => '読書期日が近づいています。',
+                '当日'  => '読書計画の期日当日です。',
+                '3日後' => '読書期日が3日過ぎています。',
+            };
+
+            foreach ($data['plans'] as $index => $plan) {
+                $user = $data['users'][$index];
+                $body = match ($timing) {
+                    '3日前' => "「{$plan->book->title}」の読書期日まであと3日です。",
+                    '当日'  => "「{$plan->book->title}」の読書期日当日です。",
+                    '3日後' => "「{$plan->book->title}」の読書期日から3日が経過しました。",
+                };
+                Notification::send($user, new ReadingPlanReminder($plan, $timing, $title, $body));
                 $notificationCount++;
             }
         }

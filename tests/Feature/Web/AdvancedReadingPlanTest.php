@@ -75,6 +75,7 @@ class AdvancedReadingPlanTest extends TestCase
 
     public function test_読書計画のリマインダー通知、自動遷移状態バッチ(): void
     {
+        $today = Carbon::today();
         // 期限超過
         $overduePlan = ReadingPlan::create([
             'user_id' => $this->user->id,
@@ -88,7 +89,7 @@ class AdvancedReadingPlanTest extends TestCase
             'user_id' => $this->user->id,
             'book_id' => $this->book2->id,
             'target_date' => Carbon::today()->addDays(3),
-            'status' => ReadingPlanStatus::Unread->value,
+            'status' => ReadingPlanStatus::Reading->value,
         ]);
 
         // 期日当日
@@ -115,7 +116,7 @@ class AdvancedReadingPlanTest extends TestCase
             'notifiable_id' => $this->user->id,
         ]);
 
-        $this->assertEquals(3, $this->user->unreadNotifications->count());
+        $this->assertEquals(2, $this->user->unreadNotifications->count());
     }
 
     public function test_読書計画の一覧をステータスで絞り込み(): void
@@ -126,14 +127,6 @@ class AdvancedReadingPlanTest extends TestCase
             'book_id' => $this->book1->id,
             'target_date' => Carbon::today()->addDays(7),
             'status' => ReadingPlanStatus::Reading->value,
-        ]);
-
-        // 未読（unread）
-        ReadingPlan::create([
-            'user_id' => $this->user->id,
-            'book_id' => $this->book2->id,
-            'target_date' => Carbon::today()->addDays(14),
-            'status' => ReadingPlanStatus::Unread->value,
         ]);
 
         // 読了（completed）
@@ -170,16 +163,6 @@ class AdvancedReadingPlanTest extends TestCase
         $response->assertStatus(200)
             ->assertSee('Laravel実践')
             ->assertDontSee('PHP問題集')
-            ->assertDontSee('読了済みの本')
-            ->assertDontSee('期日超過の本');
-
-        // 未読のみ
-        $response = $this->actingAs($this->user)->get(route('reading-plans.index', [
-            'status' => 'unread',
-        ]));
-        $response->assertStatus(200)
-            ->assertSee('PHP問題集')
-            ->assertDontSee('Laravel実践')
             ->assertDontSee('読了済みの本')
             ->assertDontSee('期日超過の本');
 
@@ -228,7 +211,7 @@ class AdvancedReadingPlanTest extends TestCase
         $this->assertDatabaseHas('reading_plans', [
             'user_id' => $this->user->id,
             'book_id' => $this->book1->id,
-            'status' => ReadingPlanStatus::Unread->value,
+            'status' => ReadingPlanStatus::Reading->value,
         ]);
     }
 
@@ -238,7 +221,7 @@ class AdvancedReadingPlanTest extends TestCase
             'user_id' => $this->user->id,
             'book_id' => $this->book1->id,
             'target_date' => Carbon::today()->addDays(5),
-            'status' => ReadingPlanStatus::Unread->value,
+            'status' => ReadingPlanStatus::Reading->value,
         ]);
 
         // 編集画面
@@ -270,7 +253,7 @@ class AdvancedReadingPlanTest extends TestCase
             'user_id' => $this->user->id,
             'book_id' => $this->book1->id,
             'target_date' => Carbon::today()->addDays(5),
-            'status' => ReadingPlanStatus::Unread->value,
+            'status' => ReadingPlanStatus::Reading->value,
         ]);
 
         $this->actingAs($this->otherUser);

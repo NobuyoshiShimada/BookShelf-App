@@ -21,7 +21,6 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('app:send-reading-plan-reminders')
         ->daily();
-        // ->everyMinute();
     }
 
     /**

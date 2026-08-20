@@ -92,7 +92,7 @@ class Book extends Model
     }
 
     /**
-     * 💡 コントローラーから移譲された検索・フィルタ・ソート共通ローカルスコープ
+     * コントローラーから移譲された検索・フィルタ・ソート共通ローカルスコープ
      *
      * @param  Builder  $query  クエリビルダ
      * @param  array<string, mixed>  $filters  キーワード、ジャンル、ソートキーを含む連想配列

@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class FavoriteController extends Controller
 {
@@ -39,11 +40,12 @@ class FavoriteController extends Controller
         /** @var User */
         $user = Auth::user();
 
-        $status = $user->toggleFavoriteBook($book->id);
-
-        $message = $status === 'detached'
-        ? 'お気に入りを解除しました。'
-        : 'お気に入りを追加しました。';
+        $message = DB::transaction(function () use ($user, $book) {
+            $status = $user->toggleFavoriteBook($book->id);
+            $message = $status === 'detached'
+            ? 'お気に入りを解除しました。'
+            : 'お気に入りを追加しました。';
+        });
 
         return back()->with('success', $message);
     }

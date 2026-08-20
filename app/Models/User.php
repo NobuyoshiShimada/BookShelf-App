@@ -110,10 +110,10 @@ class User extends Authenticatable
         return $result->get('detached', []) !== [] ? 'detached' : 'attached';
     }
 
-     /**
+    /**
      * 特定のレビューに対する「いいね！」状態を反転（トグル）処理
      *
-     * @param int $reviewId 
+     * @param int $reviewId
      * @return void
      */
     public function toggleLikeReview(int $reviewId): void
