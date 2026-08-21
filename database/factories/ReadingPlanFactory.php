@@ -24,7 +24,7 @@ class ReadingPlanFactory extends Factory
             'user_id' => User::factory(),
             'book_id' => Book::factory(),
             'target_date' => Carbon::now()->addMonths(2),
-            'status' => fake()->randomElement(['unread', 'reading', 'completed']),
+            'status' => fake()->randomElement(['reading', 'completed']),
         ];
     }
 }

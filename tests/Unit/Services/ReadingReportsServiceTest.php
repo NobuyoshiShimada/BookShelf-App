@@ -69,13 +69,6 @@ class ReadingReportsServiceTest extends TestCase
             'status'  => ReadingPlanStatus::Completed->value
         ]);
 
-        // ③ 未読の計画を1件作成
-        ReadingPlan::factory()->create([
-            'user_id' => $this->user->id,
-            'book_id' => $book5->id,
-            'status'  => ReadingPlanStatus::Unread->value
-        ]);
-
         // 統計集計の実行
         $stats = $this->service->generateUserStats($this->user);
 

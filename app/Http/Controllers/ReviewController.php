@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
@@ -113,7 +114,9 @@ class ReviewController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $user->toggleLikeReview($review->id);
+        DB::transaction(function () use ($user, $review) {
+            $user->toggleLikeReview($review->id);
+        });
 
         $message = $review->fresh()->isLikedBy($user)
             ? "レビューにいいね！を追加しました。"

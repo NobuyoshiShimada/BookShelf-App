@@ -33,31 +33,31 @@ class ReadingPlanSeeder extends Seeder
 
         $patterns = [
             [
-                'label' => '① 6日前（超過・進行中）',
+                'label' => '① 期日の6日後（過去・読書中）',
                 'status' => ReadingPlanStatus::Reading,
                 'target_date' => $today->copy()->subDays(6),
                 'completed_at' => null,
             ],
             [
-                'label' => '② 3日前（超過・未読）',
-                'status' => ReadingPlanStatus::Unread,
+                'label' => '② 期日の3日後（過去・読書中）',
+                'status' => ReadingPlanStatus::Reading,
                 'target_date' => $today->copy()->subDays(3),
                 'completed_at' => null,
             ],
             [
-                'label' => '③ 当日（本日が期日・進行中）',
+                'label' => '③ 当日（本日が期日・読書中）',
                 'status' => ReadingPlanStatus::Reading,
                 'target_date' => $today->copy(),
                 'completed_at' => null,
             ],
             [
-                'label' => '④ 3日後（間近の期日・未読）',
-                'status' => ReadingPlanStatus::Unread,
+                'label' => '④ 期日が3日後（未来・読書中）',
+                'status' => ReadingPlanStatus::Reading,
                 'target_date' => $today->copy()->addDays(3),
                 'completed_at' => null,
             ],
             [
-                'label' => '⑤ 6日後（余裕のある期日・進行中）',
+                'label' => '⑤ 期日が6日後（未来・読書中）',
                 'status' => ReadingPlanStatus::Reading,
                 'target_date' => $today->copy()->addDays(6),
                 'completed_at' => null,
@@ -75,6 +75,8 @@ class ReadingPlanSeeder extends Seeder
                 'completed_at' => $today->copy(),
             ],
         ];
+
+        ReadingPlan::where("user_id", $testUser->id)->delete();
 
         foreach ($patterns as $index => $pattern) {
             ReadingPlan::create([

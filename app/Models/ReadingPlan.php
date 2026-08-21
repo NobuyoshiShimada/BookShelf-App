@@ -6,6 +6,7 @@ use App\Enums\ReadingPlanStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class ReadingPlan extends Model
 {
@@ -55,17 +56,4 @@ class ReadingPlan extends Model
         return $this->belongsTo(Book::class);
     }
 
-    /**
-     * 自身の未変換カラム（文字列）をEnumおよびCarbonインスタンスへ安全に変換
-     *
-     * @return $this
-     */
-    public function castAttributesToEntities(): self
-    {
-        $this->status = is_string($this->status) ? \App\Enums\ReadingPlanStatus::tryFrom($this->status) : $this->status;
-        $this->target_date = is_string($this->target_date) ? \Illuminate\Support\Carbon::parse($this->target_date) : $this->target_date;
-        $this->completed_at = is_string($this->completed_at) ? \Illuminate\Support\Carbon::parse($this->completed_at) : $this->completed_at;
-
-        return $this;
-    }
 }

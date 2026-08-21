@@ -151,7 +151,7 @@ class BookController extends Controller
     public function searchIsbn(string $isbn, GoogleBooksService $googleBooksService): JsonResponse
     {
         // 13桁の数字チェック
-        if (! preg_match('/^[0-9]{13}$/', $isbn)) {
+        if (!preg_match('/^[0-9]{13}$/', $isbn)) {
             return response()->json([
                 'error' => 'ISBNは13桁の数字で入力してください。'], 400);
         }

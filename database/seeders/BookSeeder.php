@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\Genre;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 
 class BookSeeder extends Seeder
 {
@@ -15,10 +16,9 @@ class BookSeeder extends Seeder
     public function run(): void
     {
         $users = User::all();
-
         $genres = Genre::all();
 
-        if (! $users) {
+        if ($users->isEmpty()) {
             return;
         }
 
@@ -124,8 +124,12 @@ class BookSeeder extends Seeder
             ],
         ];
 
+        $now = Carbon::now();
+
         foreach ($bookData as $data) {
-            $book = Book::Create([
+            $createdAt = $now->copy()->subMinutes(($data['number'] - 1) * 10);
+
+            $book = Book::create([
                 'user_id' => $users->random()->id,
                 'title' => $data['title'],
                 'author' => $data['author'],
@@ -133,11 +137,11 @@ class BookSeeder extends Seeder
                 'published_date' => $data['published_date'],
                 'description' => $data['description'],
                 'image_url' => "https://placehold.co/200x300/e2e8f0/475569?text={$data['number']}",
-            ]
-            );
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ]);
 
-            $genreIds = Genre::whereIn('name', $data['genres'])->pluck('id')->toArray();
-
+            $genreIds = Genre::whereIn("name", $data['genres'])->pluck("id")->toArray();
             $book->genres()->sync($genreIds);
         }
     }

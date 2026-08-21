@@ -10,10 +10,10 @@ use App\Models\ReadingPlan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
-
 class ReadingPlanController extends Controller
 {
     use AuthorizesRequests;
@@ -34,9 +34,7 @@ class ReadingPlanController extends Controller
                 $query->where('status', $currentStatus);
             })
             ->latest('target_date')
-            ->get()
-            // modelのメソッドcastAttributesToEntities()
-            ->map(fn(ReadingPlan $plan) => $plan->castAttributesToEntities());
+            ->get();
 
         return view('reading-plans.index', compact('readingPlans', 'currentStatus'));
     }
@@ -55,7 +53,7 @@ class ReadingPlanController extends Controller
     }
 
     /**
-     * 新しい読書計画の登録処理（初期ステータス: 未読）
+     * 新しい読書計画の登録処理（初期ステータス: 読書中）
      *
      * @param  StoreReadingPlanRequest  $request  バリデーション済みのリクエスト
      * @return RedirectResponse 読書計画一覧画面へのリダイレクトレスポンス
@@ -68,7 +66,7 @@ class ReadingPlanController extends Controller
             'user_id' => Auth::id(),
             'book_id' => $validated['book_id'],
             'target_date' => $validated['target_date'],
-            'status' => ReadingPlanStatus::Unread,
+            'status' => ReadingPlanStatus::Reading,
         ]);
 
         return redirect()->route('reading-plans.index')
@@ -139,7 +137,7 @@ class ReadingPlanController extends Controller
     /**
      * 読書計画の読了確定処理（ステータスを読了に変更し、完了日時を自動記録）
      *
-     * @param  int|string  $id  読書計画の主キーID
+     * @param  string  $id  読書計画の主キーID
      * @return RedirectResponse 読書計画一覧画面へのリダイレクトレスポンス
      */
     public function complete(string $id): RedirectResponse
