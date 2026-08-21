@@ -34,9 +34,7 @@ class ReadingPlanController extends Controller
                 $query->where('status', $currentStatus);
             })
             ->latest('target_date')
-            ->get()
-            // modelのメソッドcastAttributesToEntities()
-            ->map(fn(ReadingPlan $plan) => $plan->castAttributesToEntities());
+            ->get();
 
         return view('reading-plans.index', compact('readingPlans', 'currentStatus'));
     }

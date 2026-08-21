@@ -114,10 +114,9 @@ class ReviewController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $message = DB::transaction(function () use ($user, $review) {
+        DB::transaction(function () use ($user, $review) {
             $user->toggleLikeReview($review->id);
         });
-        $user->toggleLikeReview($review->id);
 
         $message = $review->fresh()->isLikedBy($user)
             ? "レビューにいいね！を追加しました。"

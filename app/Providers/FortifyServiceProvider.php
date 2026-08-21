@@ -58,7 +58,7 @@ class FortifyServiceProvider extends ServiceProvider
         {
             public function toResponse($requests)
             {
-                return redirect('/books');
+                return redirect('/');
             }
         });
     }

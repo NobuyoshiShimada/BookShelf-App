@@ -42,7 +42,7 @@ class FavoriteController extends Controller
 
         $message = DB::transaction(function () use ($user, $book) {
             $status = $user->toggleFavoriteBook($book->id);
-            $message = $status === 'detached'
+            return $status === 'detached'
             ? 'お気に入りを解除しました。'
             : 'お気に入りを追加しました。';
         });
