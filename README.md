@@ -60,8 +60,10 @@ sail artisan optimize:clear
 ### git cloneでソースをローカル環境にダウンロード
 
 1. プロジェクトを作成したいフォルダに移動してgit cloneでダウンロード
+
+- (応用機能追加したブランチはmain、Advancedです。そのまま環境構築するとmainブランチでダウンロードされます。)
 ```bash
-git clone git@github.com:NobuyoshiShimada/BookShelf-App.git
+git clone https://github.com/NobuyoshiShimada/BookShelf-App.git
 ```
 2. プロジェクトディレクトリに移動
 ```bash
