@@ -21,6 +21,12 @@ class BookCrudTest extends TestCase
         $this->user = User::factory()->create();
     }
 
+    /**
+     * 未ログインユーザーに対する共通アクセス制限の検証
+     *
+     * セッション認証を持たない一般ゲストユーザーが、書籍の新規作成・保存・編集・更新・削除といった
+     * ガードされたエンドポイントへアクセスを試みた際、すべて安全に 302 リダイレクト（ログイン画面等へ）で弾かれるかを検証。
+     */
     public function test_未ログインユーザーのアクセス制限(): void
     {
         // テスト用の書籍を1件作成
@@ -34,6 +40,12 @@ class BookCrudTest extends TestCase
         $this->delete(route('books.destroy', $book))->assertStatus(302);
     }
 
+    /**
+     * 書籍一覧画面の一般公開アクセス検証
+     *
+     * 認証の有無に関わらず、すべてのユーザーが書籍一覧画面（index）に正常アクセス（200）でき、
+     * 正しいビューテンプレートおよび書籍コレクション（books）が返却されるかを検証。
+     */
     public function test_書籍一覧の画面にアクセスできる(): void
     {
         // テスト用のジャンルを1件作成
@@ -52,6 +64,12 @@ class BookCrudTest extends TestCase
         $response->assertViewHas('books');
     }
 
+    /**
+     * ログインユーザーによる新規登録画面の表示検証
+     *
+     * セッション認証を通過したログインユーザーであれば、書籍新規登録画面（create）に正常にアクセス（200）でき、
+     * フォーム構築用データ（genres）を伴った適切なテンプレートがレンダリングされるかを検証。
+     */
     public function test_ログインユーザーは新規書籍登録画面にアクセスできる(): void
     {
         // テスト用にジャンルを3件を作成
@@ -67,6 +85,13 @@ class BookCrudTest extends TestCase
         $response->assertViewHas('genres');
     }
 
+    /**
+     * ログインユーザーによる書籍データの新規保存およびリレーション紐付け検証
+     *
+     * ログインユーザーから正しい書籍情報（複数ジャンルIDの配列を含む）が POST 送信された際、
+     * `books` テーブルに本人の `user_id` で正常に永続化され、かつ中間テーブル（`book_genre`）の
+     * リレーションシップが同期された上で、フラッシュメッセージを伴い一覧画面へリダイレクトされるかを検証。
+     */
     public function test_ログインユーザーは新規書籍登録処理ができる(): void
     {
         // テスト用にジャンルを2件作成
@@ -101,6 +126,13 @@ class BookCrudTest extends TestCase
         $response->assertSessionHas('success', '書籍「'.$book->title.'」を新しく登録しました。');
     }
 
+    /**
+     * 未ログインユーザーによる書籍詳細画面のアクセス検証
+     *
+     * セッション認証を持たないゲストユーザーであっても、指定された書籍の
+     * 詳細画面（show）にパブリックに正常アクセス（200）でき、該当する書籍オブジェクト（book）が
+     * ビューへ正しく引き渡されるかを検証。
+     */
     public function test_未ログインユーザーは書籍詳細にアクセスできる(): void
     {
         // テスト用の書籍を1件作成
@@ -115,6 +147,13 @@ class BookCrudTest extends TestCase
         $response->assertViewHas('book');
     }
 
+    /**
+     * 登録者本人による書籍編集画面の表示検証
+     *
+     * 対象の書籍データを過去に登録した「所有者本人」としてログインしている場合、
+     * 書籍編集画面（edit）に正常アクセス（200）でき、フォーム構築用のデータ一式（book, genres）が
+     * 適切に返却されるかを検証。
+     */
     public function test_ログインユーザー本人が登録した書籍の編集画面はアクセスできる(): void
     {
         // テスト用に書籍を1件作成
@@ -148,6 +187,12 @@ class BookCrudTest extends TestCase
         $response->assertStatus(403);
     }
 
+    /**
+     * 他ユーザーが登録した書籍の編集画面に対するアクセス制限
+     *
+     * ログイン状態であっても、所有権のない「他人が登録した書籍」の編集画面へアクセスを試みた際、
+     * 認可ポリシー（Policy）によって安全に拒否され、403 Forbidden が返却されるかを検証。
+     */
     public function test_ログインユーザー本人が登録した書籍は更新処理ができる(): void
     {
         // テスト用のユーザーを1件作成
@@ -182,6 +227,13 @@ class BookCrudTest extends TestCase
         $response->assertSessionHas('success', '書籍「'.$book->title.'」の情報を更新しました。');
     }
 
+    /**
+     * 登録者本人による書籍データの更新および詳細画面への遷移検証
+     *
+     * 所有者本人が入力項目を書き換えて PUT リクエストを送信した際、
+     * `books` テーブルの内容が期待通りに更新され、対象書籍の詳細画面（show）へ
+     * 成功フラッシュメッセージを保持した状態で正常にリダイレクトされるかを検証。
+     */
     public function test_ログインユーザー本人が登録した書籍は削除ができる(): void
     {
         // テスト用のユーザーを1人作成

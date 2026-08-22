@@ -13,30 +13,31 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * 🧪 ReadingReportsService ユニット（単体）テスト
+ *ReadingReportsService ユニット（単体）テスト
  */
 class ReadingReportsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
     private User $user;
+
     private ReadingReportsService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->service = new ReadingReportsService();
+        $this->service = new ReadingReportsService;
     }
 
     /**
-     * 🧪 正常系: 基本統計（summary）と星数分布（rating_distribution）の集計検証
+     * 基本統計（summary）と星数分布（rating_distribution）の集計検証
      *
-     * 💡 修正仕様:
+     *
      * rating_distribution が Collection オブジェクトであるため、
      * 連想配列としてのアクセスではなく「->get(キー)」メソッドを用いて厳格にアサートします。
      */
-    public function test_generateUserStats_基本統計と評価星数の分布を正確に算出する(): void
+    public function test_generate_user_stats_基本統計と評価星数の分布を正確に算出する(): void
     {
         // 💡 独立した5冊の書籍データを明示的に用意
         $book1 = Book::factory()->create();
@@ -49,24 +50,24 @@ class ReadingReportsServiceTest extends TestCase
         Review::factory()->create([
             'user_id' => $this->user->id,
             'book_id' => $book1->id,
-            'rating'  => 5
+            'rating' => 5,
         ]);
         Review::factory()->create([
             'user_id' => $this->user->id,
             'book_id' => $book2->id,
-            'rating'  => 3
+            'rating' => 3,
         ]);
 
         // ② 読了済みの計画を2件作成
         ReadingPlan::factory()->create([
             'user_id' => $this->user->id,
             'book_id' => $book3->id,
-            'status'  => ReadingPlanStatus::Completed->value
+            'status' => ReadingPlanStatus::Completed->value,
         ]);
         ReadingPlan::factory()->create([
             'user_id' => $this->user->id,
             'book_id' => $book4->id,
-            'status'  => ReadingPlanStatus::Completed->value
+            'status' => ReadingPlanStatus::Completed->value,
         ]);
 
         // 統計集計の実行
@@ -86,13 +87,13 @@ class ReadingReportsServiceTest extends TestCase
     }
 
     /**
-     * 🧪 正常系: 高評価書籍TOP5（top_rated_books）の並び順と閾値制限の検証
+     * 高評価書籍TOP5（top_rated_books）の並び順と閾値制限の検証
      */
-    public function test_generateUserStats_評価4以上の書籍のみを最高評価順に最大5件抽出する(): void
+    public function test_generate_user_stats_評価4以上の書籍のみを最高評価順に最大5件抽出する(): void
     {
         $bookHigh = Book::factory()->create(['title' => '最高本']);
-        $bookMid  = Book::factory()->create(['title' => '普通本']);
-        $bookLow  = Book::factory()->create(['title' => '除外本']);
+        $bookMid = Book::factory()->create(['title' => '普通本']);
+        $bookLow = Book::factory()->create(['title' => '除外本']);
 
         Review::factory()->create(['user_id' => $this->user->id, 'book_id' => $bookHigh->id, 'rating' => 5]);
         Review::factory()->create(['user_id' => $this->user->id, 'book_id' => $bookMid->id, 'rating' => 4]);
@@ -109,9 +110,9 @@ class ReadingReportsServiceTest extends TestCase
     }
 
     /**
-     * 🧪 正常系: ジャンル別評価傾向ランキング（genre_ratings）の算出検証
+     * ジャンル別評価傾向ランキング（genre_ratings）の算出検証
      */
-    public function test_generateUserStats_ジャンルごとの平均評価を算出し高評価順にランキングする(): void
+    public function test_generate_user_stats_ジャンルごとの平均評価を算出し高評価順にランキングする(): void
     {
         $genreAnime = Genre::factory()->create(['name' => 'アニメ']);
         $genreNovel = Genre::factory()->create(['name' => '小説']);

@@ -141,7 +141,7 @@ class BookSeeder extends Seeder
                 'updated_at' => $createdAt,
             ]);
 
-            $genreIds = Genre::whereIn("name", $data['genres'])->pluck("id")->toArray();
+            $genreIds = Genre::whereIn('name', $data['genres'])->pluck('id')->toArray();
             $book->genres()->sync($genreIds);
         }
     }

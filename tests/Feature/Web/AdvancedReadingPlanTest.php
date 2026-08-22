@@ -17,8 +17,11 @@ class AdvancedReadingPlanTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private User $otherUser;
+
     private Book $book1;
+
     private Book $book2;
 
     protected function setUp(): void
@@ -53,6 +56,12 @@ class AdvancedReadingPlanTest extends TestCase
         ]);
     }
 
+    /**
+     * マイ読書レポート（ダッシュボード集計）の検証
+     *
+     * ユーザーに紐付くレビュー評価、および「完了（Completed）」状態の読書計画データが
+     * レポート画面の集計ロジック（stats）に正しくカウントされ、ビュー上に反映（200）されるかを検証。
+     */
     public function test_マイ読書レポート（集計）のテスト(): void
     {
         Review::factory()->create([
@@ -73,6 +82,13 @@ class AdvancedReadingPlanTest extends TestCase
         $response->assertStatus(200)->assertViewHas('stats')->assertSee('1件');
     }
 
+    /**
+     * 読書計画の日次バッチ処理（ステータス自動変更 ＆ リマインダー通知）の検証
+     *
+     * 「期限超過（Overdue）」および「期日前リマインダー」の境界条件となるテストデータを配置した状態で
+     * 独自Artisanコマンドを実行した際、DB内のステータスが正しく書き換わり、かつ
+     * 該当ユーザーに対してデータベース通知（notifications）が期待値通りの件数で発行されるかを検証。
+     */
     public function test_読書計画のリマインダー通知、自動遷移状態バッチ(): void
     {
         $today = Carbon::today();
@@ -119,6 +135,13 @@ class AdvancedReadingPlanTest extends TestCase
         $this->assertEquals(2, $this->user->unreadNotifications->count());
     }
 
+    /**
+     * 読書計画一覧のステータス条件絞り込み検証
+     *
+     * 「読書中」「読了」「期日超過」の各ステータスを持つ計画データをDBに混在させた状態で、
+     * それぞれの検索パラメータ（status）を付与してリクエストを送信した際、
+     * 該当する書籍タイトルのみが画面に描画され、非該当データが完全に非表示（DontSee）となるかを検証。
+     */
     public function test_読書計画の一覧をステータスで絞り込み(): void
     {
         // 読書中（reading）
@@ -195,8 +218,15 @@ class AdvancedReadingPlanTest extends TestCase
             ->assertDontSee('Laravel実践')
             ->assertDontSee('PHP問題集')
             ->assertDontSee('読了済みの本');
-        }
+    }
 
+    /**
+     * 読書計画の新規登録画面の遷移およびデータ永続化処理
+     *
+     * 認証済みユーザーが計画作成画面（create）にアクセスして正常表示（200）されること、
+     * および対象書籍IDと目標日付をPOST送信した際に、一覧画面（index）へリダイレクトされ、
+     * 初期ステータス（Reading）を伴う読書計画レコードがDBへ安全に保存されるかを検証。
+     */
     public function test_読書計画の新規登録画面の表示と、登録処理(): void
     {
         // 新規登録画面の表示
@@ -215,6 +245,13 @@ class AdvancedReadingPlanTest extends TestCase
         ]);
     }
 
+    /**
+     * 読書計画の編集・更新・読了・削除に関する一連のライフサイクルテスト
+     *
+     * 登録された読書計画（ReadingPlan）に対し、所有者本人が「編集画面の表示（200）」「目標日数の更新（PUT）」
+     * 「読了ステータスへの遷移（POST ➔ DB確認）」「レコードの物理削除（DELETE ➔ DB不在確認）」の
+     * すべてのフェーズをエラーなく正常に完結させ、一覧画面へ正しくリダイレクトされるかを検証。
+     */
     public function test_読書計画の更新画面の表示、更新、読了、削除(): void
     {
         $plan = ReadingPlan::create([
@@ -247,6 +284,13 @@ class AdvancedReadingPlanTest extends TestCase
         $this->assertDatabaseMissing('reading_plans', ['id' => $plan->id]);
     }
 
+    /**
+     * 認可ポリシー（Policy）による他人の読書計画操作の完全ブロック検証
+     *
+     * 所有権を持たない別ユーザー（otherUser）としてログインした際、他人が作成した読書計画の
+     * 「編集画面の表示」「情報の更新」「読了処理」「削除処理」のすべてのアクションにおいて
+     * 認可ポリシーが正しく介入し、安全に 403 Forbidden で遮断されるかを一括検証。
+     */
     public function test_他ユーザーが読書計画のポリシーで403でブロック(): void
     {
         $plan = ReadingPlan::create([

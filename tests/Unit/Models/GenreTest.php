@@ -12,9 +12,6 @@ class GenreTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * 
-     */
     // ユーザーが複数の書籍を登録できるかテスト（多対多）
     public function test_genre_belongs_to_many_books(): void
     {
@@ -39,10 +36,10 @@ class GenreTest extends TestCase
      * ジャンルを完全抹消した際、中間テーブル（book_genre）の紐付けが
      * トランザクション内で綺麗にクリアされ、書籍本体は巻き添えで消えないことを厳格に保護します。
      */
-    public function test_purgeFullyメソッドで中間テーブルの紐付けが安全にクリアされジャンルが削除される(): void
+    public function test_purge_fullyメソッドで中間テーブルの紐付けが安全にクリアされジャンルが削除される(): void
     {
         $genre = Genre::factory()->create();
-        $book  = Book::factory()->create();
+        $book = Book::factory()->create();
 
         // 中間テーブルへの紐付け
         $genre->books()->attach($book->id);

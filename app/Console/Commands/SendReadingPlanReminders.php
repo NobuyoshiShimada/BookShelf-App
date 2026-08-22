@@ -40,7 +40,7 @@ class SendReadingPlanReminders extends Command
 
         $notificationGroups = [
             '3日前' => ['users' => collect(), 'plans' => collect()],
-            '当日'  => ['users' => collect(), 'plans' => collect()],
+            '当日' => ['users' => collect(), 'plans' => collect()],
             '3日後' => ['users' => collect(), 'plans' => collect()],
         ];
 
@@ -48,7 +48,7 @@ class SendReadingPlanReminders extends Command
         $statusUpdateCount = 0;
 
         foreach ($plans as $plan) {
-            if (!$plan->user || !$plan->book) {
+            if (! $plan->user || ! $plan->book) {
                 continue;
             }
 
@@ -83,10 +83,9 @@ class SendReadingPlanReminders extends Command
                 continue;
             }
 
-
             $title = match ($timing) {
                 '3日前' => '読書期日が近づいています。',
-                '当日'  => '読書計画の期日当日です。',
+                '当日' => '読書計画の期日当日です。',
                 '3日後' => '読書期日が3日過ぎています。',
             };
 
@@ -94,7 +93,7 @@ class SendReadingPlanReminders extends Command
                 $user = $data['users'][$index];
                 $body = match ($timing) {
                     '3日前' => "「{$plan->book->title}」の読書期日まであと3日です。",
-                    '当日'  => "「{$plan->book->title}」の読書期日当日です。",
+                    '当日' => "「{$plan->book->title}」の読書期日当日です。",
                     '3日後' => "「{$plan->book->title}」の読書期日から3日が経過しました。",
                 };
                 Notification::send($user, new ReadingPlanReminder($plan, $timing, $title, $body));

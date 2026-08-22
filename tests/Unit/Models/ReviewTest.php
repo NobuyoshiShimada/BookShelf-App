@@ -13,9 +13,6 @@ class ReviewTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     *
-     */
     // ユーザーが複数の書籍を登録できるかテスト（1対多）
     public function test_review_belongs_to_user(): void
     {
@@ -74,7 +71,7 @@ class ReviewTest extends TestCase
      *
      * 「未登録なら新規登録（いいねON）」「登録済みなら即時解除（いいねOFF）」を正しくスイッチできるか検証。
      */
-    public function test_ユーザーモデルのtoggleLikeReviewメソッドによっていいね状態が正しくトグル反転する(): void
+    public function test_ユーザーモデルのtoggle_like_reviewメソッドによっていいね状態が正しくトグル反転する(): void
     {
         $user = User::factory()->create();
         $review = Review::factory()->create();
@@ -84,7 +81,7 @@ class ReviewTest extends TestCase
 
         // 中間テーブルにレコードが挿入され、判定ヘルパーが true を返すことを検証
         $this->assertDatabaseHas('review_likes', [
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'review_id' => $review->id,
         ]);
         $this->assertTrue($review->fresh()->isLikedBy($user));
@@ -94,7 +91,7 @@ class ReviewTest extends TestCase
 
         // 中間テーブルのレコードが安全に消去され、判定ヘルパーが false を返すことを検証
         $this->assertDatabaseMissing('review_likes', [
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'review_id' => $review->id,
         ]);
         $this->assertFalse($review->fresh()->isLikedBy($user));

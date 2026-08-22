@@ -19,13 +19,14 @@ class SearchVerificationSeeder extends Seeder
         $genres = Genre::all();
 
         if ($users->isEmpty() || $genres->isEmpty()) {
-            $this->command->error("ユーザーまたはジャンルのマスターデータが空です。先にUserとGenreのシーダーを実行してください。");
+            $this->command->error('ユーザーまたはジャンルのマスターデータが空です。先にUserとGenreのシーダーを実行してください。');
+
             return;
         }
 
-        $techGenreId = $genres->where("name", "技術書")->first()?->id ?? $genres->first()->id;
+        $techGenreId = $genres->where('name', '技術書')->first()?->id ?? $genres->first()->id;
 
-        $testUser = User::where("email", "yamada@example.com")->first() ?? $users->random();
+        $testUser = User::where('email', 'yamada@example.com')->first() ?? $users->random();
 
         $today = Carbon::today();
 
@@ -35,10 +36,9 @@ class SearchVerificationSeeder extends Seeder
                 'user_id' => $testUser->id,
                 'title' => "Laravelページネーション検証 vol.{$i}",
                 'author' => "解説マスター {$i}",
-                'isbn' => "978400000" . str_pad($i, 4, "0", STR_PAD_LEFT),
-                'published_date' => $today->copy()->subDays($i)->format("Y-m-d"),
+                'isbn' => '978400000'.str_pad($i, 4, '0', STR_PAD_LEFT),
+                'published_date' => $today->copy()->subDays($i)->format('Y-m-d'),
                 'description' => "ページネーションの検証用テキスト第{$i}巻です。",
-                'image_url' => "https://placehold.co{$i}",
                 'created_at' => $pastCreatedAt,
                 'updated_at' => $pastCreatedAt,
             ]);
