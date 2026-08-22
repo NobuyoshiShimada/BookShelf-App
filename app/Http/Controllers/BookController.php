@@ -6,13 +6,12 @@ use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Genre;
 use App\Services\GoogleBooksService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -22,8 +21,8 @@ class BookController extends Controller
     /**
      * 書籍一覧画面の表示（検索・フィルタ・ソート・ページネーション対応）
      *
-     * @param \Illuminate\Http\Request $request 検索キーワード、ジャンルID、ソートキーを含むリクエスト
-     * @return \Illuminate\View\View 書籍一覧画面のビュー
+     * @param  Request  $request  検索キーワード、ジャンルID、ソートキーを含むリクエスト
+     * @return View 書籍一覧画面のビュー
      */
     public function index(Request $request): View
     {
@@ -35,10 +34,11 @@ class BookController extends Controller
 
         return view('books.index', compact('books', 'genres'));
     }
+
     /**
      * 新規書籍登録画面の表示
      *
-     * @return \Illuminate\View\View 新規書籍登録画面のビュー
+     * @return View 新規書籍登録画面のビュー
      */
     public function create(): View
     {
@@ -65,8 +65,8 @@ class BookController extends Controller
     /**
      * 書籍詳細画面の表示（関連レビューやいいね情報の遅延ロード対応）
      *
-     * @param \App\Models\Book $book ルートモデルバインディングされた書籍モデルインスタンス
-     * @return \Illuminate\View\View 書籍詳細画面のビュー
+     * @param  Book  $book  ルートモデルバインディングされた書籍モデルインスタンス
+     * @return View 書籍詳細画面のビュー
      */
     public function show(Book $book): View
     {
@@ -78,9 +78,10 @@ class BookController extends Controller
     /**
      * 書籍編集画面の表示（登録者本人であることのポリシー認可制限付き）
      *
-     * @param \App\Models\Book $book ルートモデルバインディングされた書籍モデルインスタンス
-     * @return \Illuminate\View\View 書籍編集画面のビュー
-     * @throws \Illuminate\Auth\Access\AuthorizationException 登録者本人ではないユーザーがアクセスした場合
+     * @param  Book  $book  ルートモデルバインディングされた書籍モデルインスタンス
+     * @return View 書籍編集画面のビュー
+     *
+     * @throws AuthorizationException 登録者本人ではないユーザーがアクセスした場合
      */
     public function edit(Book $book): View
     {
@@ -112,9 +113,6 @@ class BookController extends Controller
 
     /**
      * 書籍データの削除処理
-     *
-     * @param \App\Models\Book $book
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Book $book): RedirectResponse
     {
@@ -129,18 +127,18 @@ class BookController extends Controller
     /**
      * 総合評価ランキングTOP10画面の表示
      *
-     * @return \Illuminate\View\View 総合ランキング画面のビュー
+     * @return View 総合ランキング画面のビュー
      */
     public function ranking(): View
     {
         $rankedBooks = Book::with(['genres', 'favoriteBooks'])
-        ->has('reviews')
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->orderBy('reviews_avg_rating', 'desc')
-        ->orderBy('reviews_count', 'desc')
-        ->take(10)
-        ->get();
+            ->has('reviews')
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->orderBy('reviews_avg_rating', 'desc')
+            ->orderBy('reviews_count', 'desc')
+            ->take(10)
+            ->get();
 
         return view('ranking.index', compact('rankedBooks'));
     }
@@ -151,15 +149,16 @@ class BookController extends Controller
     public function searchIsbn(string $isbn, GoogleBooksService $googleBooksService): JsonResponse
     {
         // 13桁の数字チェック
-        if (!preg_match('/^[0-9]{13}$/', $isbn)) {
+        if (! preg_match('/^[0-9]{13}$/', $isbn)) {
             return response()->json([
                 'error' => 'ISBNは13桁の数字で入力してください。'], 400);
         }
 
         try {
             $bookDate = $googleBooksService->fetchByIsbn($isbn);
+
             return response()->json($bookDate);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 404);
         }
     }

@@ -6,8 +6,8 @@ use App\Models\Book;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class FavoriteController extends Controller
 {
@@ -42,6 +42,7 @@ class FavoriteController extends Controller
 
         $message = DB::transaction(function () use ($user, $book) {
             $status = $user->toggleFavoriteBook($book->id);
+
             return $status === 'detached'
             ? 'お気に入りを解除しました。'
             : 'お気に入りを追加しました。';

@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\ReadingReportsService;
 use App\Enums\ReadingPlanStatus;
 use App\Models\ReadingPlan;
 use App\Models\Review;
 use App\Models\User;
+use App\Services\ReadingReportService;
+use App\Services\ReadingReportsService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -16,7 +17,7 @@ class ReadingReportController extends Controller
     /**
      * 読書傾向・統計ダッシュボード画面の表示（受付 ➔ サービスに丸投げ ➔ 返却）
      *
-     * @param  \App\Services\ReadingReportService  $reportService  自動解決されるレポート集計サービス
+     * @param  ReadingReportService  $reportService  自動解決されるレポート集計サービス
      * @return \Illuminate\Views\View 読書レポート画面のビュー
      */
     public function index(ReadingReportsService $reportService): View
@@ -39,8 +40,8 @@ class ReadingReportController extends Controller
     {
         // 1.基本統計
         $reviews = Review::with(['book.genres', 'book.user'])
-        ->where('user_id', $user->id)
-        ->get();
+            ->where('user_id', $user->id)
+            ->get();
         $completedPlans = ReadingPlan::where('user_id', $user->id)
             ->where('status', ReadingPlanStatus::Completed->value)
             ->get();

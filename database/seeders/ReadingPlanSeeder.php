@@ -76,7 +76,7 @@ class ReadingPlanSeeder extends Seeder
             ],
         ];
 
-        ReadingPlan::where("user_id", $testUser->id)->delete();
+        ReadingPlan::where('user_id', $testUser->id)->delete();
 
         foreach ($patterns as $index => $pattern) {
             ReadingPlan::create([

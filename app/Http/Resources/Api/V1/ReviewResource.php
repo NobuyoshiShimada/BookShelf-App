@@ -8,10 +8,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ReviewResource extends JsonResource
 {
     /**
-     * レビューモデルインスタンスを指定されたレスポンス配列構造へとトランスフォーム（成形変換）
+     * レビューモデルインスタンスを指定されたレスポンス配列構造へ
      *
-     * 実装仕様:
-     * N+1問題を強固に防止するため、投稿者ユーザー（user）や対象書籍（book）の情報は、
+     *
+     * N+1問題
      * コントローラー側で事前にロードされている場合のみ動的に内包（whenLoaded）します。
      *
      * @param  Request  $request  現在処理中の中央HTTPリクエストオブジェクト

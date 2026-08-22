@@ -33,12 +33,10 @@ class Genre extends Model
 
     /**
      * 中間テーブルの紐付け解除を含め、ジャンルデータを安全に完全抹消
-     *
-     * @return void
      */
     public function purgeFully(): void
     {
-        DB::transaction(function() {
+        DB::transaction(function () {
             $this->books()->sync([]);
             $this->delete();
         });

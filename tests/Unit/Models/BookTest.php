@@ -4,20 +4,17 @@ namespace Tests\Unit\Models;
 
 use App\Models\Book;
 use App\Models\Genre;
-use App\Models\ReadingPlan;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
+
 class BookTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     *
-     */
     // BookモデルがUserモデルに属しているかテスト（1対1）
     public function test_book_belongs_to_user(): void
     {
@@ -57,10 +54,10 @@ class BookTest extends TestCase
     }
 
     // キーワード検索とジャンルフィルタが正しく動作する
-    public function test_scopeFilterAndSort_keyword_genre(): void
+    public function test_scope_filter_and_sort_keyword_genre(): void
     {
         $genrePhp = Genre::factory()->create(['name' => 'PHP']);
-        $genreGo  = Genre::factory()->create(['name' => 'Go']);
+        $genreGo = Genre::factory()->create(['name' => 'Go']);
 
         $book1 = Book::factory()->create(['title' => 'Laravel実践入門', 'author' => '山田太郎']);
         $book1->genres()->attach($genrePhp->id);
@@ -85,7 +82,7 @@ class BookTest extends TestCase
     }
 
     // 全ソート条件の並び替えが正確に適用される
-    public function test_scopeFilterAndSort_sort(): void
+    public function test_scope_filter_and_sort_sort(): void
     {
         // 時間差を設けて書籍を作成
         $bookOld = Book::factory()->create(['title' => 'A_古い本', 'created_at' => Carbon::now()->subDays(2)]);
@@ -119,7 +116,7 @@ class BookTest extends TestCase
     /**
      * createWithGenres メソッドの正常系テスト
      */
-    public function test_createWithGenres(): void
+    public function test_create_with_genres(): void
     {
         $user = User::factory()->create();
         $genre1 = Genre::factory()->create();
@@ -127,13 +124,13 @@ class BookTest extends TestCase
 
         // コントローラーから移譲された作成ロジックの実行
         $book = Book::createWithGenres([
-            'user_id'        => $user->id,
-            'title'          => 'テスト駆動開発',
-            'author'         => 'ケント・ベック',
-            'isbn'           => '9784274217883',
+            'user_id' => $user->id,
+            'title' => 'テスト駆動開発',
+            'author' => 'ケント・ベック',
+            'isbn' => '9784274217883',
             'published_date' => '2015-10-01',
-            'description'    => 'テストのバイブル',
-            'image_url'      => null,
+            'description' => 'テストのバイブル',
+            'image_url' => null,
         ], [$genre1->id, $genre2->id]);
 
         $this->assertInstanceOf(Book::class, $book);
@@ -146,7 +143,7 @@ class BookTest extends TestCase
     /**
      * updateWithGenres メソッドの正常系テスト
      */
-    public function test_updateWithGenres(): void
+    public function test_update_with_genres(): void
     {
         $book = Book::factory()->create(['title' => '古いタイトル']);
         $genre = Genre::factory()->create();
@@ -164,7 +161,7 @@ class BookTest extends TestCase
     /**
      * purgeFully メソッドの完全連動削除テスト
      */
-    public function test_purgeFully(): void
+    public function test_purge_fully(): void
     {
         $book = Book::factory()->hasReviews(3)->create();
         $genre = Genre::factory()->create();

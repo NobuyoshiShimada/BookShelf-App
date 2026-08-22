@@ -13,7 +13,7 @@ class ReadingReportsService
     /**
      * 指定されたユーザーの読書統計・ランキングデータを生成して返却
      *
-     * @param  \App\Models\User  $user  対象ユーザーのインスタンス
+     * @param  User  $user  対象ユーザーのインスタンス
      * @return array<string, mixed> 統計情報を構造化した連想配列
      */
     public function generateUserStats(User $user): array
@@ -36,6 +36,7 @@ class ReadingReportsService
         $ratingDistribution = collect([0, 1, 2, 3, 4])
             ->mapWithKeys(function (int $index) use ($ratingGroup) {
                 $star = $index + 1;
+
                 return [$index => $ratingGroup->get($star, collect())->count()];
             });
 
@@ -60,7 +61,7 @@ class ReadingReportsService
             ->groupBy('genre_name')
             ->map(function (Collection $genreReviews, string $name) {
                 $firstItem = $genreReviews->first();
-                $genreId   = $firstItem['id'] ?? null;
+                $genreId = $firstItem['id'] ?? null;
 
                 return [
                     'id' => $genreId,

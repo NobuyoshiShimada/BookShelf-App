@@ -7,13 +7,14 @@ use App\Http\Requests\StoreReadingPlanRequest;
 use App\Http\Requests\UpdateReadingPlanRequest;
 use App\Models\Book;
 use App\Models\ReadingPlan;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+
 class ReadingPlanController extends Controller
 {
     use AuthorizesRequests;
@@ -76,9 +77,10 @@ class ReadingPlanController extends Controller
     /**
      * 読書計画編集画面の表示（作成者本人であることのポリシー認可制限付き）
      *
-     * @param string $id 読書計画の主キーID（文字列型）
-     * @return \Illuminate\View\View 読書計画編集画面のビュー
-     * @throws \Illuminate\Auth\Access\AuthorizationException 策定者本人ではないユーザーがアクセスした場合
+     * @param  string  $id  読書計画の主キーID（文字列型）
+     * @return View 読書計画編集画面のビュー
+     *
+     * @throws AuthorizationException 策定者本人ではないユーザーがアクセスした場合
      */
     public function edit(string $id): View
     {
@@ -94,10 +96,11 @@ class ReadingPlanController extends Controller
     /**
      * 読書計画の目標期日更新処理（作成者本人であることのポリシー認可制限付き）
      *
-     * @param \App\Http\Requests\UpdateReadingPlanRequest $request 入力バリデーション済みのリクエスト
-     * @param string $id 読書計画の主キーID（文字列型）
-     * @return \Illuminate\Http\RedirectResponse 読書計画一覧画面へのリダイレクトレスポンス
-     * @throws \Illuminate\Auth\Access\AuthorizationException 策定者本人ではないユーザーが更新を試みた場合
+     * @param  UpdateReadingPlanRequest  $request  入力バリデーション済みのリクエスト
+     * @param  string  $id  読書計画の主キーID（文字列型）
+     * @return RedirectResponse 読書計画一覧画面へのリダイレクトレスポンス
+     *
+     * @throws AuthorizationException 策定者本人ではないユーザーが更新を試みた場合
      */
     public function update(UpdateReadingPlanRequest $request, string $id): RedirectResponse
     {
@@ -118,9 +121,10 @@ class ReadingPlanController extends Controller
     /**
      * 読書計画の削除処理（作成者本人であることのポリシー認可制限付き）
      *
-     * @param string $id 読書計画の主キーID（文字列型）
-     * @return \Illuminate\Http\RedirectResponse 読書計画一覧画面へのリダイレクトレスポンス
-     * @throws \Illuminate\Auth\Access\AuthorizationException 策定者本人ではないユーザーが削除を試みた場合
+     * @param  string  $id  読書計画の主キーID（文字列型）
+     * @return RedirectResponse 読書計画一覧画面へのリダイレクトレスポンス
+     *
+     * @throws AuthorizationException 策定者本人ではないユーザーが削除を試みた場合
      */
     public function destroy(string $id): RedirectResponse
     {

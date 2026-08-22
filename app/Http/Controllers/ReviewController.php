@@ -6,12 +6,13 @@ use App\Http\Requests\ReviewRequest;
 use App\Models\Book;
 use App\Models\Review;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ReviewController extends Controller
 {
@@ -29,11 +30,11 @@ class ReviewController extends Controller
         $userId = Auth::id();
         $validated = $request->validated();
 
-        $alreadyReviewed = $book->reviews()->where("user_id", $userId)->exists();
+        $alreadyReviewed = $book->reviews()->where('user_id', $userId)->exists();
 
         if ($alreadyReviewed) {
-            return redirect()->route("books.show", $book)
-            ->with("error", "この書籍にはすでにレビューが投稿済みです。1冊につき1件まで投稿できます。");
+            return redirect()->route('books.show', $book)
+                ->with('error', 'この書籍にはすでにレビューが投稿済みです。1冊につき1件まで投稿できます。');
         }
         $book->reviews()->create([
             'user_id' => $userId,
@@ -83,9 +84,10 @@ class ReviewController extends Controller
     /**
      * 投稿済みレビューデータの削除処理
      *
-     * @param \App\Models\Review $review ルートモデルバインディングされたレビューモデル
-     * @return \Illuminate\Http\RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
-     * @throws \Illuminate\Auth\Access\AuthorizationException 投稿者本人ではないユーザーが削除を試みた場合
+     * @param  Review  $review  ルートモデルバインディングされたレビューモデル
+     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
+     *
+     * @throws AuthorizationException 投稿者本人ではないユーザーが削除を試みた場合
      */
     public function destroy(Review $review): RedirectResponse
     {
@@ -103,9 +105,10 @@ class ReviewController extends Controller
     /**
      * 特定のレビューに対する「いいね！」状態をトグル（登録・解除を反転）処理
      *
-     * @param string $id いいね対象のレビュー主キーID
-     * @return \Illuminate\Http\RedirectResponse 直前の画面へのリダイレクトレスポンス
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException 対象のレビューが存在しない場合
+     * @param  string  $id  いいね対象のレビュー主キーID
+     * @return RedirectResponse 直前の画面へのリダイレクトレスポンス
+     *
+     * @throws ModelNotFoundException 対象のレビューが存在しない場合
      */
     public function toggle(string $id): RedirectResponse
     {
@@ -119,9 +122,9 @@ class ReviewController extends Controller
         });
 
         $message = $review->fresh()->isLikedBy($user)
-            ? "レビューにいいね！を追加しました。"
-            : "レビューのいいね！を解除しました。";
+            ? 'レビューにいいね！を追加しました。'
+            : 'レビューのいいね！を解除しました。';
 
-        return back()->with("success", $message);
+        return back()->with('success', $message);
     }
 }

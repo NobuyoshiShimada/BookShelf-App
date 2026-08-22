@@ -49,8 +49,15 @@ class AdvancedBookSearchSortTest extends TestCase
             'isbn' => '0987654321098',
             'created_at' => Carbon::now(),
         ]);
+        $this->book2->genres()->attach($genre->id);
     }
 
+    /**
+     * キーワード検索およびジャンルフィルタリング
+     *
+     * タイトル、著者名による部分一致検索、およびジャンルIDによる絞り込みが
+     * 正しくクエリに反映され、該当する書籍のみが画面に描画されるかを検証。
+     */
     public function test_キーワード検索、フィルタ(): void
     {
         // キーワード検索（タイトル）
@@ -65,6 +72,12 @@ class AdvancedBookSearchSortTest extends TestCase
         $response->assertStatus(200)->assertSee('Laravel実践');
     }
 
+    /**
+     * 一覧画面の複数ソート機能
+     *
+     * クエリパラメータ（sort）の指定に基づき、「最新順」「古い順」「レビュー評価順」
+     * 「タイトル五十音順」でレコードが期待通りの並び順（SeeInOrder）で取得できるかを検証。
+     */
     public function test_ソート機能(): void
     {
         Review::factory()->create([
@@ -102,6 +115,12 @@ class AdvancedBookSearchSortTest extends TestCase
         $response->assertSeeInOrder(['Laravel実践', 'PHP問題集']);
     }
 
+    /**
+     * 検索条件を維持した状態でのページネーション遷移
+     *
+     * 複数件の書籍が存在する環境で、検索キーワード（keyword）を付与したまま
+     * 2ページ目（page=2）へ遷移した際にも条件が消失せず引き継がれるかを検証。
+     */
     public function test_検索時条件を維持したままページ遷移(): void
     {
         Book::factory()->count(10)->sequence(fn ($sequence) => [
@@ -130,6 +149,12 @@ class AdvancedBookSearchSortTest extends TestCase
         $responseNextPage->assertStatus(200)->assertSee('Laravel');
     }
 
+    /**
+     * 外部API連携（Google Books API等）のモック通信検証
+     *
+     * `Http::fake` を用いて外部ネットワーク通信を遮断・疑似応答化し、
+     * 取得した生データをアプリケーション仕様のJSON構造へ変換して取得できるかを検証。
+     */
     public function test_外部api連携のモック化(): void
     {
         Http::fake([
@@ -159,6 +184,12 @@ class AdvancedBookSearchSortTest extends TestCase
             ->assertJsonPath('author', 'モック著者');
     }
 
+    /**
+     * 外部API側で書籍がヒットしなかった（該当なし）場合の処理
+     *
+     * 外部APIから検索結果が空（itemsが空配列）で返却された際、
+     * システム内部で適切に検知し、ユーザーへ404エラーおよび日本語の補足文を返せるかを検証。
+     */
     public function test_外部apiが「該当無し」を返した時の404(): void
     {
         Http::fake([
@@ -173,6 +204,12 @@ class AdvancedBookSearchSortTest extends TestCase
             ->assertJsonPath('error', '該当する書籍情報が見つかりませんでした。');
     }
 
+    /**
+     * 外部APIのサーバーダウン・通信障害時のフェイルセーフ
+     *
+     * 外部API側がステータス500等のエラーを返却、あるいは接続不能になった場合、
+     * アプリケーションがクラッシュせず、安全な制御（404等への丸め処理）が作動するかを検証。
+     */
     public function test_外部apiが「通信障害、サーバーダウン」を起こした時の500(): void
     {
         Http::fake([

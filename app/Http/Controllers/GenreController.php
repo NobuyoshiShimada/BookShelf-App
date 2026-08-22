@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\GenreRequest;
 use App\Models\Genre;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class GenreController extends Controller
@@ -59,8 +58,8 @@ class GenreController extends Controller
     public function show(Genre $genre): View
     {
         $books = $genre->books()
-        ->with(['genres', 'user'])
-        ->paginate(10);
+            ->with(['genres', 'user'])
+            ->paginate(10);
 
         return view('genres.show', compact('genre', 'books'));
     }
@@ -97,9 +96,6 @@ class GenreController extends Controller
 
     /**
      * ジャンルの削除処理
-     *
-     * @param \App\Models\Genre $genre
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Genre $genre): RedirectResponse
     {
