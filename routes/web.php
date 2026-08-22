@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 // 公開ページ
 // 書籍一覧
-Route::get('/books', [BookController::class, 'index'])->name('books.index');
+Route::get('/', [BookController::class, 'index'])->name('books.index');
 // 書籍のランキング
 Route::get('/ranking', [BookController::class, 'ranking'])->name('ranking.index');
 
@@ -28,7 +28,7 @@ Route::middleware(['auth'])->group(function () {
     // 新規書籍登録
     Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
     // 新規書籍登録処理
-    Route::post('/books', [BookController::class, 'store'])->name('books.store');
+    Route::post('/', [BookController::class, 'store'])->name('books.store');
     // 書籍編集
     Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
     // 書籍更新
