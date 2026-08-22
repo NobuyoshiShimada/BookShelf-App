@@ -61,13 +61,17 @@ sail artisan optimize:clear
 
 1. プロジェクトを作成したいフォルダに移動してgit cloneでダウンロード
 
-- (応用機能追加したブランチはmain、Advancedです。そのまま環境構築するとmainブランチでダウンロードされます。)
+- (応用機能追加したブランチはmain、Advancedです。そのまま環境構築するとmainブランチでダウンロードされます。基本機能はBasicブランチです。)
 ```bash
 git clone https://github.com/NobuyoshiShimada/BookShelf-App.git
 ```
 2. プロジェクトディレクトリに移動
 ```bash
 cd bookshelf-app
+```
+※基本機能のブランチはBasicへ移動
+```bash
+cd switch Basic
 ```
 ### .envファイルの設定
 
