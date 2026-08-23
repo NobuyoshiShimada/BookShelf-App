@@ -41,7 +41,7 @@ cd bookshelf-app
 ```
 3. 基本機能ブランチに移動
 ```bash
-cd switch Basic
+git switch Basic
 ```
 
 ### .envファイルの設定
