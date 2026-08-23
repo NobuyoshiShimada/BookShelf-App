@@ -8,20 +8,33 @@ use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
     use AuthorizesRequests;
 
     /**
-     * Store a newly created resource in storage.
+     * 対象書籍に対する新規レビューのデータベース登録処理
+     *
+     * @param  ReviewRequest  $request  入力バリデーション済みのリクエスト
+     * @param  Book  $book  レビュー対象の書籍モデルインスタンス
+     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
      */
-    public function store(ReviewRequest $request, Book $book)
+    public function store(ReviewRequest $request, Book $book): RedirectResponse
     {
+        $userId = Auth::id();
         $validated = $request->validated();
 
+        $alreadyReviewed = $book->reviews()->where('user_id', $userId)->exists();
+
+        if ($alreadyReviewed) {
+            return redirect()->route('books.show', $book)
+                ->with('error', 'この書籍にはすでにレビューが投稿済みです。1冊につき1件まで投稿できます。');
+        }
         $book->reviews()->create([
-            'user_id' => Auth::id(),
+            'user_id' => $userId,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
         ]);
@@ -73,15 +86,29 @@ class ReviewController extends Controller
             ->with('success', 'レビューを削除しました。');
     }
 
-    public function toggle($id)
+    /**
+     * 特定のレビューに対する「いいね！」状態をトグル（登録・解除を反転）処理
+     *
+     * @param  string  $id  いいね対象のレビュー主キーID
+     * @return RedirectResponse 直前の画面へのリダイレクトレスポンス
+     *
+     * @throws ModelNotFoundException 対象のレビューが存在しない場合
+     */
+    public function toggle(string $id): RedirectResponse
     {
         $review = Review::findOrFail($id);
 
         /** @var User $user */
         $user = Auth::user();
 
-        $user->likedReviews()->toggle($review->id);
+        DB::transaction(function () use ($user, $review) {
+            $user->toggleLikeReview($review->id);
+        });
 
-        return back();
+        $message = $review->fresh()->isLikedBy($user)
+            ? 'レビューにいいね！を追加しました。'
+            : 'レビューのいいね！を解除しました。';
+
+        return back()->with('success', $message);
     }
 }

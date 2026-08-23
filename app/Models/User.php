@@ -70,4 +70,25 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Review::class, 'review_likes')->withTimestamps();
     }
+        /**
+     * 指定された書籍のお気に入り状態を反転（トグル）させ、処理結果のステータス文字列を返却
+     *
+     * @param  int  $bookId  対象の書籍ID
+     * @return string 'attached'（追加時）または 'detached'（解除時）
+     */
+    public function toggleFavoriteBook(int $bookId): string
+    {
+        $result = collect($this->favoriteBooks()->toggle($bookId));
+
+        return $result->get('detached', []) !== [] ? 'detached' : 'attached';
+    }
+
+    /**
+     * 特定のレビューに対する「いいね！」状態を反転（トグル）処理
+     */
+    public function toggleLikeReview(int $reviewId): void
+    {
+        $this->likedReviews()->toggle($reviewId);
+    }
 }
+
